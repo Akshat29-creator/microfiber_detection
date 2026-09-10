@@ -138,8 +138,9 @@ kirti_project/
 1. Open a terminal (PowerShell, Command Prompt, or bash) in `d:\kirti_project\MicroplasticDetector\`.
 2. Compile using standard C++17:
    ```bash
-   g++ -std=c++17 -Wall -O2 main.cpp -o MicroplasticDetector.exe
+   g++ -std=c++17 -Wall -O2 -static -static-libgcc -static-libstdc++ main.cpp -o MicroplasticDetector.exe
    ```
+   *(Note: The `-static` flags embed all C++ runtime libraries directly inside the `.exe`, ensuring it runs on any Windows laptop without needing MinGW or missing DLLs like `libgcc_s_seh-1.dll`!)*
 3. Run the executable:
    ```bash
    .\MicroplasticDetector.exe

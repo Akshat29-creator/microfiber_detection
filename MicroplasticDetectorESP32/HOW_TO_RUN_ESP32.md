@@ -1,384 +1,474 @@
-# 🚀 Complete Step-by-Step Guide: Running the Microplastic Detector DSA Project on ESP32
+# 🚀 Master Setup & Run Guide: Microplastic Detection & Environmental Analysis System
 
-**Project:** Microplastic Detection & Environmental Analysis System  
+**Project:** Microplastic Detection & Water Analysis System  
 **Subject:** Data Structures and Algorithms (DSA) — 3rd Semester  
-**Target Board:** ESP32 (NodeMCU-32S / ESP32 Dev Module)  
-**Platform:** Arduino IDE (v2.0 or higher)  
-**Author:** Akshit Bansal | B.Tech Cyber Physical Systems | MIT Manipal  
+**Target Microcontroller:** ESP32 (NodeMCU-32S / ESP32 Dev Module / DOIT DevKit V1)  
+**Firmware Platform:** Arduino IDE (v2.0 or higher) — C++ Pointer Engine  
+**Frontend Platform:** Next.js 16 (React 19, TypeScript, Tailwind CSS v4, Framer Motion, Recharts)  
+**Author:** Akshit Bansal | B.Tech Cyber Physical Systems (CPS) | MIT Manipal  
 
 ---
 
-## 📌 Summary: What Is This Project?
+## 📌 Executive Summary: What Is This Project?
 
-This project combines an **environmental hardware system** (microplastic detection in water using laser scattering and turbidity failsafe) with a **complete Data Structures & Algorithms (DSA) backend**. 
+This project combines an **environmental physical computing system** (microplastic detection in water using laser scattering and turbidity failsafe) with a **complete Data Structures & Algorithms (DSA) backend** and an **interactive Dark-Glassmorphism Web Dashboard**.
 
-All data structures are **coded from scratch in pure C++ using pointers and classes** (no external libraries needed). The entire program runs directly inside an **ESP32 microcontroller** and is controlled interactively via the **Arduino Serial Monitor**.
+All 8 core data structures are **coded from scratch in pure C++ using pointers, dynamic memory allocation, and classes** (no standard template library `std::vector` or external data structure libraries).
 
-### 🌟 The Best Part: Hardware is 100% Optional!
-- **With Hardware:** Connects to real photodiode, turbidity sensor, DS18B20 temperature sensor, laser, and relay pump.
-- **Without Hardware (Simulation Mode):** If no sensors are connected, the code automatically senses floating analog pins and generates realistic physical sensor readings (turbidity fluctuations, photodiode laser voltage drops, temperature variations).
-- **You can run and demonstrate the ENTIRE project with just an ESP32 board and a USB cable plugged into your laptop!**
-
----
-
-## 🧰 Prerequisites & What You Need
-
-### 1. Hardware Needed
-| Item | Description | Required? |
-| :--- | :--- | :--- |
-| **ESP32 Board** | Any standard ESP32 (ESP32 Dev Module, NodeMCU-32S, ESP-WROOM-32, DOIT DevKit V1) | **YES** |
-| **Micro-USB or Type-C Cable** | **MUST BE A DATA CABLE**, not a charge-only cable | **YES** |
-| **Turbidity Sensor (Analog)** | Measures water cloudiness (Connected to GPIO 34) | Optional |
-| **BPW34 Photodiode + LM358** | Laser detection chamber (Connected to GPIO 35) | Optional |
-| **DS18B20 Temp Sensor** | Water temperature (Connected to GPIO 4) | Optional |
-| **5V Relay Module** | Controls pump (Connected to GPIO 26) | Optional |
-| **650nm Laser Diode** | Laser light source (Connected to GPIO 27) | Optional |
-
-> ⚠️ **CRITICAL USB CABLE WARNING:** Many cheap USB cables sold with power banks or toys are "charging only" (they only have 2 power wires inside and NO data wires). If your computer doesn't make a sound or show a COM port when you plug in the ESP32, **switch your USB cable!**
+### 🌟 Flexible Architecture: Dual Operating Modes
+1. **Real Hardware Mode (`http://localhost:3001` via `start_real.bat`):**
+   - Connects to an ESP32 running `MicroplasticDetectorESP32_WiFi.ino` over high-speed bidirectional WebSockets (Port 81).
+   - Reads physical sensors: BPW34 Photodiode + LM358 Op-Amp, Analog Turbidity Sensor, and DS18B20 Digital Temperature Probe.
+   - Directly actuates physical hardware: 12V Peristaltic Pump Relay and 650nm Laser Diode.
+2. **Demo / Simulation Mode (`http://localhost:3000` via `start_demo.bat`):**
+   - **Hardware is 100% Optional!**
+   - If you do not have the physical sensors or ESP32 connected, you can run and demonstrate the entire project in Demo Mode.
+   - Simulates physical sensor physics (laser beam attenuation, turbidity cloudiness, temperature drift) and executes all 8 C++ DSA structures directly in the browser!
+3. **Standalone Serial Monitor Mode:**
+   - Run directly on the ESP32 via USB and interact through the Arduino IDE Serial Monitor at 115200 baud without opening a web browser.
 
 ---
 
-## 💻 Step-by-Step Setup Guide
+## 📐 System Architecture Diagram
+
+```mermaid
+graph TD
+    subgraph Physical Hardware Layer
+        PUMP[12V Peristaltic Pump\nGPIO 26 Relay] --> CHAMBER[Detection Chamber]
+        LASER[650nm Laser Diode\nGPIO 27] --> CHAMBER
+        CHAMBER --> PHOTO[BPW34 Photodiode + LM358\nGPIO 35 Analog ADC1_CH7]
+        TURB[Analog Turbidity Sensor\nGPIO 34 Analog ADC1_CH6]
+        TEMP[DS18B20 Digital Temp Probe\nGPIO 4 OneWire Bit-Bang]
+    end
+
+    subgraph ESP32 Microcontroller Core [Pure C++ Pointer DSA Engine]
+        PHOTO --> SLL[1. Singly Linked List\nSensor Log]
+        PHOTO --> DLL[2. Doubly Linked List\nEvent History]
+        PHOTO --> CIRC[3. Circular Buffer\nSliding Window DSP]
+        TURB --> SAFE{Turbidity Failsafe\nThreshold: 2.50V}
+        SAFE -->|Breach| ALRT[4. Alert Queue\nFIFO + Priority Preemption]
+        TEMP --> CAL[5. Calibration Stack\nLIFO Undo/Redo]
+        DLL --> BST[6. Detection BST\nIn/Pre/Post Traversals]
+        SLL --> SORT[7. Sorting Algorithms\nBubble, Sel, Ins, Merge, Quick]
+        SLL --> SRCH[8. Searching Algorithms\nLinear vs Binary vs Breach]
+    end
+
+    subgraph Communication Layer
+        ESP32 Core <-->|USB 115200 Baud| SER[Arduino Serial Monitor]
+        ESP32 Core <-->|WebSocket Port 81| WS[Bidirectional JSON Stream]
+    end
+
+    subgraph Next.js Web Dashboard
+        WS <--> REAL[Real Mode Dashboard\nhttp://localhost:3001]
+        DEMO[Demo Simulation Dashboard\nhttp://localhost:3000]
+    end
+```
 
 ---
 
-### Step 1: Download & Install Arduino IDE
+## 🧰 Bill of Materials (BOM) & Complete Pinout Table
 
-1. Go to the official Arduino download page:  
+### 1. Hardware Components
+| Component | Function / Purpose | Required for Demo? | Required for Real? |
+| :--- | :--- | :---: | :---: |
+| **ESP32 Dev Board** | 32-bit dual-core MCU running C++ DSA engine & WebSocket server | **No** | **Yes** |
+| **Micro-USB / Type-C Cable** | **Data Cable** for firmware flashing & 5V power | **No** | **Yes** |
+| **BPW34 Photodiode + LM358** | Laser attenuation detector (voltage drop on microplastic particle) | **No** | Optional* |
+| **Turbidity Sensor (A0)** | Cloudiness safety failsafe (pauses pump if water too murky) | **No** | Optional* |
+| **DS18B20 Temp Probe** | Water temperature monitor with optical baseline compensation | **No** | Optional* |
+| **5V Relay Module** | Power gating for 12V peristaltic sample pump | **No** | Optional* |
+| **650nm Laser Diode** | Collimated optical light source for flow cell chamber | **No** | Optional* |
+| **4.7kΩ Resistor** | Pull-up resistor for DS18B20 OneWire Data line to 3.3V | **No** | Optional* |
+| **PC / Laptop** | Windows 10/11 running Node.js and Arduino IDE | **Yes** | **Yes** |
+
+*\*Note: The ESP32 firmware automatically detects floating/unconnected pins and seamlessly falls back to synthetic sensor sampling so you can run the physical board even without sensors attached!*
+
+### 2. Complete ESP32 Hardware Pinout Mapping
+> ⚠️ **CRITICAL WIRING RULE:** All sensors, actuators, external power supplies, and the ESP32 **MUST share a common Ground (GND) rail**.
+
+```text
+               +--------------------------------------+
+               |          ESP32 DevKit V1             |
+               |                                      |
+Turbidity OUT  | GPIO 34 (ADC1_CH6) - Analog In       |
+Photodiode OUT | GPIO 35 (ADC1_CH7) - Analog In       |
+DS18B20 Data   | GPIO 4  (Pull-up 4.7kΩ to 3.3V)      |
+Relay Signal   | GPIO 26 - Digital Out (Active HIGH)  |
+Laser Anode(+) | GPIO 27 - Digital Out (Active HIGH)  |
+Ground Rail    | GND (Common Ground for all modules)  |
+5V Rail        | VIN / 5V Power from USB or PSU       |
+3.3V Rail      | 3V3 Clean Low-Noise Regulated Output |
+               +--------------------------------------+
+```
+
+| Sensor / Actuator | Module Pin | ESP32 Pin | Logic Voltage | Wiring Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| **Turbidity Sensor** | Signal (A0) | **GPIO 34** | 0 – 3.3V Analog | Connect VCC to 5V (or 3.3V depending on module) |
+| | GND | **GND** | 0V | Common Ground rail |
+| **Photodiode (LM358)** | OUT | **GPIO 35** | 0 – 3.3V Analog | Operational amplifier output measuring laser beam |
+| | VCC / GND | **3V3 / GND** | 3.3V | Power from ESP32 3.3V rail for low noise |
+| **DS18B20 Temp** | DQ (Data) | **GPIO 4** | 3.3V Digital | **Must have 4.7kΩ pull-up resistor** to 3.3V |
+| | VDD / GND | **3V3 / GND** | 3.3V | Can use parasitics or normal 3-wire mode |
+| **5V Relay (Pump)** | IN / Signal | **GPIO 26** | 3.3V / 5V Digital | HIGH = Relay ON (Pump runs), LOW = Relay OFF |
+| | VCC / GND | **5V / GND** | 5V DC | Relay coil needs 5V (from VIN or external adapter) |
+| **650nm Laser Diode** | Anode (+) | **GPIO 27** | 3.3V Digital | HIGH = Laser ON, LOW = Laser OFF |
+| | Cathode (-) | **GND** | 0V | Connect to ground rail |
+
+---
+
+## 💻 Step-by-Step Installation & Software Setup
+
+Follow these steps once on your laptop to prepare both the ESP32 toolchain and the web dashboard:
+
+---
+
+### Step 1: Install Node.js (Prerequisite for Web Dashboard)
+The web dashboard is built using **Next.js 16** and requires **Node.js v18 or higher (LTS recommended)**.
+
+1. Download the official Windows installer from:  
+   👉 **[https://nodejs.org/](https://nodejs.org/)** (Choose **LTS** version).
+2. Run the `.msi` installer, accept default settings, and finish the installation.
+3. Verify installation by opening a new Command Prompt or PowerShell window:
+   ```cmd
+   node -v
+   npm -v
+   ```
+   *(You should see versions like `v20.x.x` or `v22.x.x` and `npm 10.x.x`).*
+
+---
+
+### Step 2: Install Arduino IDE 2.x
+1. Download **Arduino IDE 2.3.x (or newer)** from:  
    👉 **[https://www.arduino.cc/en/software](https://www.arduino.cc/en/software)**
-2. Download **Arduino IDE 2.3.x** (or the latest version) for your operating system (**Windows Win 10 and newer**).
-3. Run the downloaded installer (`.exe`) and complete the standard installation:
-   - Accept the license agreement.
-   - Leave the default install location.
-   - If prompted to install device drivers (Adafruit / Arduino USB drivers), click **"Install" / "Yes"**.
+2. Run the installer and grant permission to install any bundled device drivers.
 
 ---
 
-### Step 2: Install USB-to-UART Drivers (If ESP32 Not Recognized)
+### Step 3: Install USB-to-UART Drivers (If ESP32 Not Recognized)
+Standard ESP32 boards use a USB-to-UART bridge chip:
+- **Silicon Labs CP2102** or **WCH CH340**.
 
-Most ESP32 boards communicate with your PC via a USB-to-UART bridge chip (usually either **CH340** or **CP2102**).
-
-1. Plug your ESP32 into your computer via USB.
-2. Open **Device Manager** on Windows (Press `Win + X` → click **Device Manager**).
-3. Look under **Ports (COM & LPT)**:
-   - If you see **"Silicon Labs CP210x USB to UART Bridge (COMx)"** or **"USB-SERIAL CH340 (COMx)"**, your driver is already working! Note down the COM number (e.g., `COM3`, `COM4`, `COM5`).
-   - If you see a yellow exclamation mark ⚠️ under **Other Devices** (e.g., "CP2102" or "USB2.0-Serial"), you need to install the driver:
-     - **For CP2102 chip:** Download driver from [Silicon Labs CP210x Drivers](https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers)
-     - **For CH340 chip:** Download driver from [WCH CH340 Driver](https://www.wch-ic.com/downloads/CH341SER_EXE.html)
-     - Run the installer, restart Arduino IDE, and reconnect the ESP32.
+1. Plug your ESP32 into a USB port on your PC using a **known data cable**.
+2. Press `Win + X` → open **Device Manager** → expand **Ports (COM & LPT)**:
+   - If you see `Silicon Labs CP210x USB to UART Bridge (COMx)` or `USB-SERIAL CH340 (COMx)`, your driver is **already installed**! Note the COM number (e.g., `COM3`, `COM4`).
+   - If you see a yellow exclamation mark ⚠️ or `CP2102` / `USB2.0-Serial` under *Other Devices*:
+     - **CP2102 Driver:** [Download from Silicon Labs](https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers)
+     - **CH340 Driver:** [Download from WCH](https://www.wch-ic.com/downloads/CH341SER_EXE.html)
+     - Install driver, unplug and re-insert your USB cable.
 
 ---
 
-### Step 3: Add ESP32 Board Support to Arduino IDE
-
-By default, Arduino IDE only knows basic Arduino boards (Uno, Mega, Nano). We must tell it how to program an ESP32:
-
+### Step 4: Add ESP32 Board Support to Arduino IDE
 1. Open **Arduino IDE**.
 2. Go to **File** → **Preferences** (or press `Ctrl + Comma`).
-3. Find the field labeled **"Additional boards manager URLs"**.
-4. Paste the following official Espressif URL into that box:
+3. In the box labeled **Additional boards manager URLs**, paste:
    ```text
    https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
    ```
-   *(If there is already another URL in that box, add a comma `,` at the end and paste this URL).*
-5. Click **OK** to save.
-6. Now open the **Boards Manager**:
-   - In Arduino IDE, click the **Board icon** on the left toolbar (or go to **Tools** → **Board** → **Boards Manager...**).
-   - In the search bar at the top, type: `esp32`
-   - You will see **"esp32 by Espressif Systems"**.
-   - Click **INSTALL** (choose the latest version, e.g., 2.0.x or 3.0.x).
-   - *Wait 2-3 minutes for the download and installation to complete.*
+   *(If you already have another URL in this box, separate them with a comma `,`).*
+4. Click **OK**.
+5. Open the Boards Manager by clicking the **Board Icon** on the left sidebar (or go to **Tools** → **Board** → **Boards Manager...**).
+6. Search for `esp32` and locate **esp32 by Espressif Systems**.
+7. Click **INSTALL** (wait 2–3 minutes for core tools to download).
 
 ---
 
-### Step 4: Verify No External Libraries Are Needed! 🎉
-
-> **Good News:** You **DO NOT** need to install anything from the Arduino Library Manager!
-> 
-> All required DSA data structures (Linked Lists, Doubly Linked Lists, Circular Buffers, Stacks, Queues, Priority Queues, Binary Search Trees, Sorting algorithms, and Searching algorithms) were written completely from scratch in standard C++ specifically for this project. There are **zero external library dependencies** to worry about.
-
----
-
-### Step 5: Folder Structure & Opening the Project
-
-Arduino IDE has **one strict rule**:  
-> ⚠️ **The project folder name MUST match the `.ino` file name exactly!**
-
-Ensure your folder is named `MicroplasticDetectorESP32` and contains all 11 files:
-
-```text
-MicroplasticDetectorESP32/
-├── MicroplasticDetectorESP32.ino    <-- Main Arduino sketch file
-├── SensorReading.h                  <-- Sensor Reading data class
-├── MicroplasticEvent.h              <-- Detection Event data class
-├── SensorLinkedList.h               <-- Singly Linked List
-├── EventDoublyList.h                <-- Doubly Linked List
-├── CircularBuffer.h                 <-- Circular Linked List (Sliding Window)
-├── AlertQueue.h                     <-- FIFO Queue & Priority Queue
-├── CalibrationStack.h               <-- LIFO Stack (Undo/Redo)
-├── DetectionBST.h                   <-- Binary Search Tree (3 Traversals)
-├── SortingAlgorithms.h              <-- 5 Sorting Algorithms
-└── SearchAlgorithms.h               <-- 2 Searching Algorithms
-```
-
-#### How to Open:
-1. Double-click **`MicroplasticDetectorESP32.ino`**.
-2. Arduino IDE will open.
-3. You should see **11 tabs** across the top of Arduino IDE:
-   `MicroplasticDetectorESP32 | SensorReading.h | MicroplasticEvent.h | SensorLinkedList.h | ...`
-   *(This confirms all header files were detected and loaded properly!)*
+### Step 5: Install Required Arduino Libraries
+1. Open the Library Manager in Arduino IDE:
+   - Click the **Book / Library Icon** on the left sidebar (or press `Ctrl + Shift + I`, or go to **Sketch** → **Include Library** → **Manage Libraries...**).
+2. In the search box, type: `WebSockets`
+3. Look for **WebSockets by Markus Sattler**.
+4. Click **INSTALL**.  
+   *(This library powers the high-speed WebSocket server on port 81 that talks to our Next.js dashboard).*
+5. **Notice on DSA & Sensors:**
+   - All 8 data structures (Linked Lists, BST, Stacks, Queues, Sorting, Searching) are built with **zero external libraries**!
+   - The DS18B20 temperature sensor uses an in-memory bit-bang OneWire driver written directly in the sketch—no external OneWire or DallasTemperature library is needed!
 
 ---
 
-### Step 6: Select Board & COM Port
+## ⚡ ESP32 Firmware Setup & Flashing
 
-1. Connect your ESP32 to the PC with the USB cable.
-2. In Arduino IDE top menu, go to **Tools** → **Board** → **esp32** → Select:
-   - **"ESP32 Dev Module"**  
-   *(or "DOIT ESP32 DEVKIT V1" or "NodeMCU-32S" — all of these work!)*
-3. Go to **Tools** → **Port** → Select the COM port corresponding to your ESP32:
-   - e.g., `COM3`, `COM4`, `COM7` (do **not** select COM1, as COM1 is usually an internal motherboard port).
-4. Go to **Tools** → **Upload Speed** → Select **`115200`** (or `921600` for faster uploads).
+Inside the `MicroplasticDetectorESP32/` directory, you will find two sketches:
+- **`MicroplasticDetectorESP32_WiFi.ino`** *(Recommended)*: High-speed WebSocket server + Serial Monitor menu + Real Web Dashboard bridge.
+- **`MicroplasticDetectorESP32.ino`**: Standalone Serial-only version (no WiFi required).
 
 ---
 
-### Step 7: Upload the Code to ESP32
+### Step 1: Configure WiFi Credentials
+1. In Arduino IDE, open **`MicroplasticDetectorESP32/MicroplasticDetectorESP32_WiFi.ino`**.
+2. Check lines 36–37:
+   ```cpp
+   // ============================================================
+   //  WiFi CONFIGURATION — CHANGE THESE!
+   // ============================================================
+   const char* WIFI_SSID     = "YOUR_WIFI_SSID";
+   const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+   ```
+3. Replace `"YOUR_WIFI_SSID"` and `"YOUR_WIFI_PASSWORD"` with your actual WiFi name and password.
+   > 💡 **PRO TIP (Mobile Hotspot):** The ESP32 only supports **2.4 GHz WiFi**. If your home router is 5 GHz only, turn on your smartphone's Mobile Hotspot and ensure the AP band is set to **2.4 GHz Band**. Set your laptop and ESP32 to connect to this hotspot.
 
-1. Click the **Upload** button (the right arrow `->` icon in the top left toolbar, or press `Ctrl + U`).
-2. The bottom Output window will start compiling the code (`Compiling sketch...`). This takes about 30–60 seconds on the first run.
-3. Once compiled, it will begin uploading to the ESP32:
+---
+
+### Step 2: Configure Arduino IDE Tools Menu
+1. Go to **Tools** → **Board** → **esp32** → Select **ESP32 Dev Module** *(or NodeMCU-32S / DOIT ESP32 DEVKIT V1)*.
+2. Go to **Tools** → **Port** → Select your ESP32 COM port (e.g., `COM3`, `COM5`). *(Avoid COM1)*.
+3. Go to **Tools** → **Upload Speed** → Select **`115200`** (or `921600` for faster flashing).
+
+---
+
+### Step 3: Compile and Upload
+1. Click the **Upload** button (the right arrow `->` icon in the top toolbar, or press `Ctrl + U`).
+2. The bottom console will output `Compiling sketch...`.
+3. When it reaches:
    ```text
    Connecting........_____....._____.....
    ```
+   🚨 **THE BOOT BUTTON TRICK:**
+   - **Press and hold the physical `BOOT` (or `IO0`) button** on your ESP32 board for 2 seconds.
+   - The moment you see `Writing at 0x00010000... (xx%)`, release the button!
+4. The upload will complete with:
+   ```text
+   Leaving...
+   Hard resetting via RTS pin...
+   Done uploading.
+   ```
 
-#### 🚨 THE FAMOUS ESP32 "BOOT" BUTTON TRICK:
-If the output gets stuck at `Connecting........_____.....`:
-- **Press and HOLD down the `BOOT` (or `IO0`) button** on your ESP32 board for 2 seconds.
-- As soon as you see `Writing at 0x00010000... (xx%)` in the terminal, release the button!
-- The upload will finish with:
-  ```text
-  Leaving...
-  Hard resetting via RTS pin...
-  Done uploading.
+---
+
+### Step 4: Open Serial Monitor & Obtain IP Address
+1. Click the **Serial Monitor** icon in the top-right corner of Arduino IDE (or press `Ctrl + Shift + M`).
+2. Set the baud rate dropdown in the Serial Monitor toolbar to **`115200 baud`**.
+3. Set the line ending dropdown to **`Newline`** (or `Both NL & CR`).
+4. Press the **EN** (or **RST**) reset button on the ESP32 board once.
+5. Watch the boot sequence print:
+   ```text
+   ==========================================
+   |                                        |
+   |   MICROPLASTIC DETECTION SYSTEM        |
+   |   DSA Project — ESP32 + WiFi Version   |
+   |                                        |
+   ==========================================
+   [WiFi] Connecting to: MyHomeWiFi ..........
+   [WiFi] Connected successfully!
+   [WiFi] ESP32 IP Address: 192.168.1.45
+   [WS] WebSocket server started on port 81
+   ```
+6. 📝 **Note down the ESP32 IP Address** (e.g., `192.168.1.45`). You will paste this into the Web Dashboard!
+
+---
+
+## 🌐 Web Dashboard Setup & Execution
+
+The dashboard is located in the **`dashboard/`** folder. It features dedicated execution profiles and batch scripts.
+
+---
+
+### Step 1: Install Dashboard Dependencies (First-Time Only)
+1. Open a Command Prompt or PowerShell terminal.
+2. Navigate to the dashboard directory:
+   ```cmd
+   cd d:\kirti_project\dashboard
+   ```
+3. Run the installation command:
+   ```cmd
+   npm install
+   ```
+   *(This installs Next.js 16, React 19, Framer Motion, Recharts, Lucide Icons, and Tailwind CSS v4).*
+
+---
+
+### Step 2: Running the Dashboard
+
+We have provided convenient one-click batch scripts in `d:\kirti_project\dashboard`:
+
+#### 🟢 Option A: Demo Mode (Port 3000 — Simulation / No ESP32 needed)
+- **Method 1:** Double-click **`dashboard/start_demo.bat`** in Windows File Explorer.
+- **Method 2:** Or run in terminal:
+  ```cmd
+  cd d:\kirti_project\dashboard
+  npm run demo
   ```
+- Open your browser to: **`http://localhost:3000`**
+- **What it does:** Runs with 100% simulated sensor telemetry and browser-evaluated C++ DSA models. Perfect for practice, quick demonstration, or when hardware is not plugged in.
+
+#### 🔵 Option B: Real Hardware Mode (Port 3001 — Physical ESP32 Hardware)
+- **Method 1:** Double-click **`dashboard/start_real.bat`** in Windows File Explorer.
+- **Method 2:** Or run in terminal:
+  ```cmd
+  cd d:\kirti_project\dashboard
+  npm run real
+  ```
+- Open your browser to: **`http://localhost:3001`**
+- **What it does:** Starts in authentic real-hardware mode awaiting connection to your ESP32. All telemetry graphs, voltages, and data structures populate live from physical sensor readings.
 
 ---
 
-### Step 8: Open Serial Monitor & How to Interact
-
-1. In Arduino IDE, open the **Serial Monitor**:
-   - Click the magnifying glass icon in the top right corner (or press `Ctrl + Shift + M`, or go to **Tools** → **Serial Monitor**).
-2. **TWO CRITICAL SETTINGS IN SERIAL MONITOR (MUST DO!):**
-   - **Baud Rate:** Look at the dropdown menu in the Serial Monitor toolbar. Set it to **`115200 baud`**.  
-     *(If it is set to 9600, you will only see garbled unreadable symbols like `⸮`)*.
-   - **Line Ending:** Ensure the dropdown is set to **`Newline`** (or `Both NL & CR`).
-3. Press the **EN** (or **RST**) physical button on your ESP32 board once to restart it.
-4. You will see the project banner appear immediately!
-
-```text
-  ==========================================
-  |                                        |
-  |   MICROPLASTIC DETECTION SYSTEM        |
-  |   DSA Project — ESP32 Version          |
-  |                                        |
-  |   MIT Manipal | B.Tech CPS | Sem 3     |
-  |                                        |
-  |   Classes, Pointers, Linked Lists,     |
-  |   Sorting, Searching, Stack, Queue,    |
-  |   Binary Search Tree                   |
-  |                                        |
-  ==========================================
-
-  >> Open Serial Monitor at 115200 baud
-  >> Set line ending to 'Newline'
-
-  ==========================================
-   MICROPLASTIC DETECTOR — DSA PROJECT
-   MIT Manipal | ESP32 | 3rd Semester
-  ==========================================
-   1. Run Full Detection Simulation
-   2. Sensor Log (Singly Linked List)
-   3. Event History (Doubly Linked List)
-   4. Sliding Window (Circular LL)
-   5. Sorting Algorithms
-   6. Searching Algorithms
-   7. Calibration Stack
-   8. Alert Queue
-   9. Detection BST
-  10. System Status
-  ==========================================
-  Enter choice (1-10):
-```
-
-5. **How to input commands:**
-   - Click into the message input field at the top of the Serial Monitor.
-   - Type a number (e.g., `1`) and press **Enter** (or click **Send**).
+### Step 3: Stopping the Servers Cleanly
+To stop the servers or release ports 3000 and 3001:
+- Double-click **`dashboard/stop_servers.bat`**.
+- It safely closes all running Node processes and clears occupied ports.
 
 ---
 
-## 🎮 Interactive Menu Walkthrough (How to Test Everything)
+## 🔗 Connecting Dashboard to the Physical ESP32
 
-Here is a guide on what each menu option does so you can present it to your professors or evaluators:
+When running in **Real Hardware Mode** (`http://localhost:3001`):
 
-### Option 1: Run Full Detection Simulation
-- **What it does:** Runs the complete end-to-end detection pipeline.
-- **Prompt:** Asks `How many samples? (5-30):`. Type `15` and press Enter.
-- **Workflow executed:**
-  1. Reads DS18B20 temperature sensor & applies optical baseline calibration.
-  2. Starts the peristaltic pump relay.
-  3. Pre-filtration & turbidity failsafe check (if water turbidity is too high, it pauses to prevent false positives).
-  4. Activates 650nm laser chamber and samples photodiode voltage.
-  5. Whenever a voltage drop below threshold is detected, it logs a **Microplastic Detection Event**!
-  6. Automatically populates all data structures (Singly Linked List, Doubly Linked List, Circular Buffer, Alert Queue, BST).
-
-### Option 2: Sensor Log (Singly Linked List)
-- Demonstrates: **Singly Linked List** with dynamic pointer allocation (`Node* next`).
-- Sub-menu options:
-  - `1. Display all readings`: Traverses from `head` to `tail` and prints all timestamps, voltages, and types.
-  - `2. Add manual reading`: Tests `insertAtHead()` or `insertAtEnd()`.
-  - `3. Delete reading by index`: Tests node deletion and pointer reconnection.
-  - `4. Search by sensor type`: Traverses list to find specific sensors (e.g., `PHOTODIODE`, `TURBIDITY`).
-  - `5. List size`: Displays current element count.
-
-### Option 3: Event History (Doubly Linked List)
-- Demonstrates: **Doubly Linked List** with two pointers per node (`prev` and `next`).
-- Sub-menu options:
-  - `1. Display Forward (Oldest -> Newest)`: Traverses `head` → `tail`.
-  - `2. Display Reverse (Newest -> Oldest)`: Traverses `tail` → `prev` → `head` (proves bidirectional pointer navigation).
-  - `3. Delete event by ID`: Demonstrates deleting a node in $O(1)$ pointer rewiring.
-  - `4. Filter by severity`: Filters events marked `LOW`, `MEDIUM`, `HIGH`, or `CRITICAL`.
-
-### Option 4: Sliding Window (Circular Linked List)
-- Demonstrates: **Circular Linked List** where the last node links back to the first (`tail->next = head`).
-- Used in real-world DSP to maintain a fixed sliding window (size = 10) of the most recent sensor values.
-- When full, it overwrites the oldest node in a circle without needing memory re-allocation.
-- Calculates and prints the **real-time Moving Average Voltage**.
-
-### Option 5: Sorting Algorithms Benchmark
-- Demonstrates all **5 core sorting algorithms** from the DSA syllabus:
-  1. **Bubble Sort** — $O(n^2)$
-  2. **Selection Sort** — $O(n^2)$
-  3. **Insertion Sort** — $O(n^2)$
-  4. **Merge Sort** — $O(n \log n)$ (Divide and Conquer)
-  5. **Quick Sort** — $O(n \log n)$ (Pivot partitioning)
-- Prints step-by-step element states, comparison counts, swap counts, and execution time in microseconds on the ESP32 chip!
-
-### Option 6: Searching Algorithms Benchmark
-- Demonstrates:
-  1. **Linear Search** — $O(n)$ scan on unsorted sensor events.
-  2. **Binary Search** — $O(\log n)$ divide-and-conquer on sorted timestamp array.
-- Compares the number of comparisons made by Linear Search vs Binary Search.
-
-### Option 7: Calibration History Stack
-- Demonstrates: **Stack (LIFO — Last In, First Out)** data structure.
-- Used for sensor baseline calibration undo/redo:
-  - `Push`: Records a new optical/turbidity calibration state.
-  - `Pop (Undo)`: Rolls back to the previous baseline voltage setting.
-  - `Peek`: Inspects the active active calibration without popping.
-
-### Option 8: Alert Notification Queue
-- Demonstrates:
-  1. **FIFO Queue (First In, First Out)**: Standard operational alerts processed in arrival order.
-  2. **Priority Queue**: High-severity alerts (e.g. `PUMP_OVERCURRENT`, `CRITICAL_TURBIDITY`) jump to the front of the queue ahead of routine alerts!
-
-### Option 9: Detection BST (Binary Search Tree)
-- Demonstrates: **Binary Search Tree** ordered by detection timestamp.
-- Operations:
-  - `In-Order Traversal (Left, Root, Right)`: Outputs all detection events in chronologically sorted order!
-  - `Pre-Order Traversal (Root, Left, Right)`: Shows tree hierarchy for serialization.
-  - `Post-Order Traversal (Left, Right, Root)`: Used for post-order evaluation / deletion.
-  - `Range Query`: Finds all microplastic particles detected between timestamp $T_1$ and $T_2$ in $O(\log n)$ time.
-
-### Option 10: System Status & Free RAM
-- Prints microcontroller health, sensor baseline settings, total detection count, and **`ESP.getFreeHeap()`** (shows real-time available RAM in bytes inside the ESP32).
+1. Look at the top navigation bar of the dashboard.
+2. You will see an IP input box pre-filled with `192.168.1.x` and an orange badge stating **`Disconnected`**.
+3. Type the **ESP32 IP Address** you obtained from the Arduino Serial Monitor (e.g., `192.168.1.45`).
+4. Click the green **"Connect"** button.
+5. Within 1 second, the connection badge changes to a glowing emerald:  
+   `Connected (ws://192.168.1.45:81)`
+6. **Instant Bi-Directional Synchronization:**
+   - The Photodiode Voltage, Water Temperature, and Turbidity HUD dials immediately display live physical readings.
+   - Flipping the **"Laser Active"** or **"Relay Pump"** switches on the dashboard sends instant commands to the ESP32, triggering physical relay clicks and turning the laser diode on/off in real-time!
 
 ---
 
-## 🔌 Hardware Wiring Guide (If Connecting Real Sensors)
+## 🧪 Testing the Complete Pipeline & Data Structures
 
-If you have physical sensors and wish to wire them to the ESP32:
+Here is the recommended step-by-step demonstration sequence to showcase the system to your professors or evaluators:
 
-```text
-               +-----------------------------+
-               |         ESP32 DevKit        |
-               |                             |
-Turbidity OUT  | GPIO 34 (ADC1_CH6)          |
-Photodiode OUT | GPIO 35 (ADC1_CH7)          |
-DS18B20 Data   | GPIO 4  (Pull-up 4.7k to 3V3|
-Relay IN       | GPIO 26                     |
-Laser (+)      | GPIO 27                     |
-GND            | GND (Common Ground)         |
-VIN / 5V       | 5V Power Rail               |
-3V3            | 3.3V Power Rail             |
-               +-----------------------------+
-```
-
-| Sensor Module | Sensor Pin | ESP32 Pin | Note |
-| :--- | :--- | :--- | :--- |
-| **Turbidity Sensor** | Signal (A0) | **GPIO 34** | Analog voltage 0–3.3V |
-| | VCC / GND | 5V / GND | |
-| **BPW34 Photodiode + LM358** | Signal OUT | **GPIO 35** | Analog voltage drop on particle |
-| | VCC / GND | 3.3V / GND | |
-| **DS18B20 Temp Sensor** | Data Pin | **GPIO 4** | 4.7kΩ resistor between Data & 3.3V |
-| | VCC / GND | 3.3V / GND | |
-| **5V Relay Module (Pump)** | IN / Signal | **GPIO 26** | Controls peristaltic pump |
-| | VCC / GND | 5V / GND | |
-| **650nm Laser Diode** | Positive (+) | **GPIO 27** | Driven directly or via transistor |
-| | Negative (-) | GND | |
-
-*(Remember: If real sensors are not connected, you don't have to change any code! The code detects disconnected pins and runs simulation mode automatically).*
+### 1. Execute Detection Simulation (`/simulation`)
+1. Go to the **Simulation** page (`http://localhost:3001/simulation` or `http://localhost:3000/simulation`).
+2. Adjust sample count slider (e.g., 15 samples) and click **"Run Detection Simulation"**.
+3. Watch the end-to-end flow:
+   - **Phase 1: Baseline Calibration** — Reads DS18B20 water temperature probe and pushes optical baseline state onto the LIFO Stack.
+   - **Phase 2: Pump Actuation** — Relay closes, activating fluid flow through the chamber.
+   - **Phase 3: Turbidity Failsafe Check** — Verifies water clarity ($> 2.50\text{V}$). If water is too cloudy, it halts the pump to prevent false optical scattering.
+   - **Phase 4: Laser Chamber Scattering** — 650nm laser activates; photodiode measures optical attenuation.
+   - **Phase 5: Microplastic Logging** — Drops below threshold trigger detection events and push alerts to the Priority Queue.
+   - **Phase 6: Data Structure Hydration** — Automatically populates the Singly Linked List, Doubly Linked List, Circular Buffer, and Binary Search Tree!
 
 ---
 
-## ❓ Troubleshooting & Common Errors
+### 2. Guided Tour of All 10 Web Dashboard Pages
 
-### 1. `A fatal error occurred: Failed to connect to ESP32: Timed out waiting for packet header`
-- **Cause:** ESP32 did not enter download mode automatically.
-- **Fix:** When Arduino IDE displays `Connecting........_____.....`, **press and hold the `BOOT` button on the ESP32 board** until writing starts, then let go.
-- Also make sure you selected the correct COM port in **Tools** → **Port**.
-
-### 2. No COM Port appears under `Tools` → `Port` (Port is greyed out)
-- **Cause 1:** Your USB cable is a charge-only cable. **Try 2 or 3 different USB cables** until your PC plays the "USB connected" chime.
-- **Cause 2:** The USB-to-UART driver (CP2102 or CH340) is not installed. Follow **Step 2** above.
-
-### 3. Serial Monitor displays weird gibberish characters (`⸮⸮x`)
-- **Cause:** Baud rate mismatch.
-- **Fix:** In the bottom-right or top-right of the Serial Monitor, change the baud rate dropdown from `9600 baud` to **`115200 baud`**. Then press the `EN` / `RST` button on the ESP32.
-
-### 4. You type a number in Serial Monitor and hit Enter, but nothing happens
-- **Cause:** Serial line ending is set to "No line ending".
-- **Fix:** Change the line ending dropdown in Serial Monitor from `No line ending` to **`Newline`** (or `Both NL & CR`). The code waits for the newline character to know you finished typing.
-
-### 5. `Compilation error: No such file or directory`
-- **Cause:** Arduino IDE couldn't find the `.h` header files.
-- **Fix:** Ensure the folder is named **`MicroplasticDetectorESP32`** and that all 10 `.h` files and the 1 `.ino` file are inside the **exact same folder**. When you open `MicroplasticDetectorESP32.ino`, you should see 11 tabs along the top.
-
-### 6. Brownout detector was triggered / ESP32 keeps restarting
-- **Cause:** The USB port isn't supplying enough current (especially when relay or laser turns on).
-- **Fix:** Plug the USB cable directly into a motherboard USB 3.0 port (blue port) on your PC rather than an unpowered USB hub.
-
----
-
-## 🎯 How This Satisfies the DSA Project Submission Requirements
-
-| Guideline Requirement | How Our Project Solves It | Implementation File |
+| Page Route | DSA Concept Demonstrated | Key Features & Interactive Controls |
 | :--- | :--- | :--- |
-| **Common Problem Statement** | Microplastic detection in aquatic environments (same as hardware project) | All files |
-| **Language: C++** | Pure C++ with dynamic memory & pointers | All `.h` & `.ino` files |
-| **Classes & Objects** | `SensorReading`, `MicroplasticEvent`, `Node`, `SensorLinkedList`, `EventDoublyList`, `CircularBuffer`, `DetectionBST`, etc. | `SensorReading.h`, `MicroplasticEvent.h` |
-| **Pointers** | All linked data structures use `Node* next`, `Node* prev`, `BSTNode* left/right` | All header files |
-| **Singly Linked List** | Sequential sensor log with head/tail pointers | `SensorLinkedList.h` |
-| **Doubly Linked List** | Bi-directional event history (forward & reverse traversal) | `EventDoublyList.h` |
-| **Circular Linked List** | Sliding window buffer for real-time moving average | `CircularBuffer.h` |
-| **Stack (LIFO)** | Sensor baseline calibration history with Undo feature | `CalibrationStack.h` |
-| **Queue (FIFO & Priority)** | Real-time alert notifications with critical alert prioritization | `AlertQueue.h` |
-| **Binary Search Tree** | Timestamp-indexed search with In-Order, Pre-Order, Post-Order traversals | `DetectionBST.h` |
-| **Sorting Algorithms** | Bubble, Selection, Insertion, Merge, Quick Sort with comparison counts | `SortingAlgorithms.h` |
-| **Searching Algorithms** | Linear Search ($O(n)$) vs Binary Search ($O(\log n)$) with step counts | `SearchAlgorithms.h` |
+| **`/` (Overview)** | System Telemetry & Aggregator | Live HUD dials, real-time voltage chart, laser/pump hardware toggles, and live system alert notification ticker. |
+| **`/simulation`** | End-to-End Pipeline & Failsafe | Automated multi-phase test sequence with step-by-step hardware status indicators. |
+| **`/sensor-log`** | **Singly Linked List (`Node* next`)** | Sequential sensor log. Shows pointer memory addresses, node indices, manual insertion at head/tail, index-based node deletion, and sensor-type filtering. |
+| **`/events`** | **Doubly Linked List (`prev` and `next`)** | Microplastic breach event history. Interactive **Forward Traversal (Head $\rightarrow$ Tail)** and **Reverse Traversal (Tail $\rightarrow$ Head)** to prove bidirectional pointer navigation. $O(1)$ node deletion by ID. |
+| **`/sliding-window`** | **Circular Linked List (`tail->next = head`)** | 10-element circular ring buffer. Shows head/tail pointer progression, automatic overwriting of oldest elements, and real-time DSP **Moving Average Voltage**. |
+| **`/calibration`** | **Stack (`LIFO` — Last-In, First-Out)** | Sensor baseline calibration state engine. Interactive `Push` (record new optical baseline), `Pop / Undo` (revert to previous baseline), and `Peek` current state. |
+| **`/alerts`** | **FIFO Queue & Priority Queue** | Real-time system alert feed. Routine status alerts processed in arrival order (FIFO), while safety-critical breach alerts (`CRITICAL_TURBIDITY`, `PUMP_OVERCURRENT`) jump to the front of the line! |
+| **`/bst`** | **Binary Search Tree** | Dynamic recursive visual tree rendering indexed by timestamp. Interactive tree traversals: **In-Order** (chronological sort), **Pre-Order** (serialization), **Post-Order**, **Range Query** between timestamps $T_1$ and $T_2$, and manual node insertion. |
+| **`/sorting`** | **5 Sorting Algorithms** | Sorts real photodiode voltage readings using **Bubble Sort**, **Selection Sort**, **Insertion Sort**, **Merge Sort**, and **Quick Sort**. Features step-by-step state animations, comparison counts, swap counts, and microsecond-level timing comparisons. |
+| **`/searching`** | **Searching Algorithms** | Side-by-side performance showdown between **Linear Search ($O(n)$)** and **Binary Search ($O(\log n)$)** with comparison counters. Includes an automated Breach Event Scanner. |
+| **`/system`** | **System Diagnostics & RAM** | Real-time hardware health monitor displaying ESP32 Free Heap memory (`ESP.getFreeHeap()`), 240 MHz CPU clock, WiFi RSSI signal strength, device uptime, and GPIO pin statuses. |
 
 ---
 
-## 📞 Quick Checklist Before You Send to Friend:
-1. Copy the entire folder `MicroplasticDetectorESP32` to a zip file or pendrive.
-2. Send this guide (`HOW_TO_RUN_ESP32.md`) along with it.
-3. Your friend just needs to follow **Steps 1 to 8** and they will have the entire project running in under 10 minutes!
+## ⚙️ Interactive Arduino Serial Monitor (Alternative Mode)
+
+If you wish to run and demonstrate the project entirely through the **Arduino IDE Serial Monitor** without a browser:
+
+1. Flash either `MicroplasticDetectorESP32.ino` or `MicroplasticDetectorESP32_WiFi.ino`.
+2. Open Serial Monitor (`Ctrl + Shift + M`) at **115200 baud** with line ending set to **Newline**.
+3. Press `EN` on the ESP32. You will see the main interactive text menu:
+   ```text
+   ==========================================
+    MICROPLASTIC DETECTOR — DSA PROJECT
+    MIT Manipal | ESP32 | 3rd Semester
+   ==========================================
+    1. Run Full Detection Simulation
+    2. Sensor Log (Singly Linked List)
+    3. Event History (Doubly Linked List)
+    4. Sliding Window (Circular LL)
+    5. Sorting Algorithms
+    6. Searching Algorithms
+    7. Calibration Stack
+    8. Alert Queue
+    9. Detection BST
+   10. System Status
+   ==========================================
+   Enter choice (1-10):
+   ```
+4. Type a number (e.g., `1` for simulation, `5` for sorting, `9` for BST) and press Enter to navigate through submenus and perform live pointer operations!
+
+---
+
+## 🛠️ Comprehensive Troubleshooting & FAQ
+
+### 1. Arduino IDE says `Failed to connect to ESP32: Timed out waiting for packet header`
+- **Cause:** ESP32 did not enter UART download mode automatically.
+- **Fix:** When Arduino IDE console prints `Connecting........_____.....`, **press and hold the `BOOT` button on the ESP32** for 2 seconds until upload begins, then release.
+
+### 2. COM Port is greyed out or missing in Arduino IDE
+- **Cause 1:** Your USB cable is "charge-only". Many phone charging cables have no internal data wires. **Switch to a known USB data cable.**
+- **Cause 2:** USB bridge drivers (CP2102 or CH340) are missing. Revisit **Step 3** in Software Setup.
+
+### 3. Serial Monitor displays garbled symbols (`⸮⸮x~`)
+- **Cause:** Baud rate mismatch.
+- **Fix:** Change the baud rate dropdown at the bottom or top of the Serial Monitor to **`115200 baud`**. Press the `EN` / `RST` button on the board.
+
+### 4. ESP32 fails to connect to WiFi (`Connecting to: ... [Failed]`)
+- **Cause 1:** ESP32 does **NOT support 5 GHz WiFi networks**. Ensure your router or mobile hotspot is broadcasting on **2.4 GHz**.
+- **Cause 2:** Typing mistake in `WIFI_SSID` or `WIFI_PASSWORD` on lines 36–37 of the `.ino` file. Note that passwords are case-sensitive.
+
+### 5. Web Dashboard says `Connection Error (ws://192.168.x.x:81)`
+- **Check 1:** Ensure your laptop and the ESP32 are connected to the **exact same WiFi router or mobile hotspot**.
+- **Check 2:** Verify you entered the exact IP address shown in the Serial Monitor.
+- **Check 3:** Ensure Windows Firewall is not blocking incoming/outgoing connections on port 81.
+
+### 6. Port 3000 or 3001 is already in use (`EADDRINUSE`)
+- **Cause:** A previous Node server is still running in the background.
+- **Fix:** Double-click **`dashboard/stop_servers.bat`** to instantly kill orphaned Node processes and free both ports.
+
+### 7. ESP32 keeps resetting when the Relay or Laser triggers (`Brownout detector was triggered`)
+- **Cause:** The USB port on your PC is not supplying sufficient current when the 5V relay coil energizes.
+- **Fix:** Plug your USB cable into a blue USB 3.0 motherboard port on your PC, or use an external 5V 2A power supply with shared common ground.
+
+---
+
+## 🎓 Academic Viva & Presentation Defense Guide
+
+When presenting this project to examiners or professors, use this quick reference mapping:
+
+| Project Component | Syllabus Concept | Theoretical Complexity | Embedded Implementation Detail |
+| :--- | :--- | :---: | :--- |
+| **Sensor Log** | Singly Linked List | $O(1)$ Insert, $O(n)$ Search | Dynamic `Node* next` allocation for continuous time-series sensor sampling. |
+| **Event History** | Doubly Linked List | $O(1)$ Head/Tail, $O(1)$ Delete | `prev` and `next` pointers allow forward playback and reverse historical analysis. |
+| **Sliding Window** | Circular Linked List | $O(1)$ Insertion | Fixed ring buffer (`tail->next = head`) computing DSP moving average without reallocation. |
+| **Calibration** | Stack (LIFO) | $O(1)$ Push, $O(1)$ Pop | Undo/Redo stack for optical baseline voltages and turbidity threshold drift. |
+| **Alert Notification** | Queue (FIFO & Priority) | $O(1)$ Enqueue / Dequeue | Normal alerts handled in arrival order; safety breach alerts jump ahead via priority preemption. |
+| **Detection Tree** | Binary Search Tree | $O(\log n)$ Average, $O(n)$ Worst | Indexed by timestamp. In-Order traversal provides chronologically sorted output; supports range queries. |
+| **Voltage Benchmark**| Sorting Algorithms | Bubble/Sel/Ins: $O(n^2)$<br>Merge/Quick: $O(n \log n)$ | Sorts real photodiode voltage array with hardware microsecond timing and comparison counters. |
+| **Event Search** | Searching Algorithms | Linear: $O(n)$<br>Binary: $O(\log n)$ | Demonstrates exponential efficiency gain of Binary Search on sorted event timestamps. |
+
+---
+
+## 📁 Repository Directory Structure
+
+```text
+kirti_project/
+├── HOW_TO_RUN_ESP32.md                 <-- Master Setup & Run Guide (This File)
+├── MENU_AND_FUNCTIONS_GUIDE.md         <-- Deep-dive into all C++ DSA functions
+├── README.md                           <-- Academic overview & report
+├── MicroplasticDetectorESP32/          <-- Arduino ESP32 Firmware Folder
+│   ├── MicroplasticDetectorESP32_WiFi.ino <-- WiFi + WebSocket + Serial Sketch (Primary)
+│   ├── MicroplasticDetectorESP32.ino      <-- Standalone Offline Serial Sketch
+│   ├── SensorReading.h                 <-- Sensor Reading data class
+│   ├── MicroplasticEvent.h             <-- Detection Event data class
+│   ├── SensorLinkedList.h              <-- Singly Linked List implementation
+│   ├── EventDoublyList.h               <-- Doubly Linked List implementation
+│   ├── CircularBuffer.h                <-- Circular Linked List (Sliding Window)
+│   ├── AlertQueue.h                    <-- FIFO Queue & Priority Queue
+│   ├── CalibrationStack.h              <-- LIFO Stack (Undo/Redo)
+│   ├── DetectionBST.h                  <-- Binary Search Tree (3 Traversals)
+│   ├── SortingAlgorithms.h             <-- Bubble, Selection, Insertion, Merge, Quick Sort
+│   └── SearchAlgorithms.h              <-- Linear Search & Binary Search
+└── dashboard/                          <-- Next.js 16 Web Dashboard
+    ├── package.json                    <-- Scripts: "demo" (port 3000), "real" (port 3001)
+    ├── start_demo.bat                  <-- 1-Click Launch Demo Mode (Port 3000)
+    ├── start_real.bat                  <-- 1-Click Launch Real Mode (Port 3001)
+    ├── stop_servers.bat                <-- 1-Click Stop Dashboard Servers
+    ├── app/                            <-- 10 Next.js Page Routes (Overview, BST, etc.)
+    ├── components/                     <-- Reusable Dark-Glass UI components
+    └── context/                        <-- WebSocket & Simulation Context state engine
+```
+
+---
+*Developed with pride at **MIT Manipal** | Department of Cyber Physical Systems | 3rd Semester Data Structures & Algorithms.*

@@ -2,7 +2,7 @@
 
 ### A Cyber-Physical System & Data Structures and Algorithms (DSA) Implementation
 
-**Author:** Akshit Bansal
+**Author:** Akshat Awasthi
 **Institution:** Manipal Institute of Technology (MIT), Manipal
 **Department:** B.Tech Cyber Physical Systems (CPS) | 3rd Semester
 **Course Context:** Data Structures and Algorithms (DSA) Lab & Theory Project

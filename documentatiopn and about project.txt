@@ -1,0 +1,157 @@
+1. System Boot & Baseline Calibration: The ESP32 prepares for data collection. The ESP32 powers on, connects to the local Wi-Fi, and links to your Blynk Digital Twin dashboard. Before the pump even starts, the DS18B20 Temperature Sensor inside the sample beaker reads the water temperature. The ESP32 uses this to calibrate the optical baseline, ensuring accuracy.
+
+2. Activation & Flow Initiation: The actuator kicks in. You click the "Start Flow" button on your live dashboard. The ESP32 sends a 3.3V signal to close the 5V Relay Module. The Peristaltic Pump instantly powers on, rotating its rollers to pull water from the sample beaker through the silicone tubing.
+
+3. Stage 1: Mechanical Pre-Filtration: The hardware hack. The pumped water hits the inline motorcycle fuel filter. Large sediment—like sand, thick algae, and heavy mud—is physically trapped in the mesh. The water and the microscopic plastic particles pass straight through.
+
+4. Stage 2: The Turbidity Failsafe: The software logic gate. The filtered water flows through the Analog Turbidity Sensor. The ESP32 constantly reads this analog voltage.
+
+If voltage is LOW (Water is still muddy): The ESP32 instantly cuts the relay, stopping the pump. It sends an "ERROR: Turbidity Too High" alert to the dashboard to prevent false positives.
+
+If voltage is HIGH (Water is clear enough): The ESP32 approves the sample, and the pump continues pushing the water forward.
+
+5. Stage 3: Core Optical Detection: Scanning in the dark chamber. The validated water enters the PVC Dark Chamber. The 650nm laser shines continuously through the water into the BPW34 Photodiode. When a microplastic particle passes through the beam, it scatters the light. The photodiode registers a microsecond drop in voltage, which is amplified by the LM358 Op-Amp.
+
+6. Stage 4: Real-Time Digital Twin Sync: Closing the loop. The ESP32 processes the voltage drop and logs a confirmed detection. It instantly pushes this data packet over Wi-Fi to the Blynk dashboard. The judges watch a live graph spike in real-time, the "Microplastics Detected" counter increments by one, and the analyzed water safely exits into the Waste Beaker.
+
+
+The "working" of this project relies on a principle called Optical Attenuation, combined with smart electronic failsafes. Instead of using complex chemistry, your system uses light and shadows to "see" the plastic.
+
+Here is the step-by-step physics and electronics breakdown of exactly how it works:
+
+1. The Optical Baseline (The "Normal" State)
+Inside your PVC dark chamber, the 650nm Laser Diode is turned on constantly, firing a beam of red light straight through the clear water.
+
+On the other side of the chamber, the BPW34 Photodiode absorbs that light.
+
+The photodiode converts the light into an electrical voltage. As long as the water is clear and nothing is blocking the laser, the ESP32 reads a steady, high voltage (e.g., 3.0V).
+
+2. The Physical Interruption (The "Detection")
+When the peristaltic pump pushes a microscopic piece of plastic into the dark chamber, that particle floats directly into the path of the laser beam.
+
+The plastic particle scatters and blocks a portion of the laser light.
+
+For a fraction of a millisecond, the photodiode receives less light.
+
+This causes the electrical voltage to suddenly drop (e.g., from 3.0V down to 2.5V) before immediately returning to normal as the particle floats away.
+
+The ESP32 constantly polls this pin. When it registers that sudden, sharp V-shaped voltage dip, it counts it as one microplastic particle.
+
+3. The Turbidity Failsafe (Preventing False Positives)
+If the water was full of mud, the mud would block the laser too, and the system would falsely count millions of microplastics. Here is how the system works around that:
+
+Before the water ever reaches the laser, it flows through the Analog Turbidity Sensor.
+
+This sensor shoots its own infrared light into the water to measure general cloudiness.
+
+The Logic: If the turbidity sensor outputs a low voltage (meaning the water is muddy), the ESP32 actively disables the pump and ignores the laser. It will only count a laser blockage as a "plastic particle" if the turbidity sensor confirms the surrounding water is actually clear.
+
+4. The Temperature Compensation
+Water density changes slightly with temperature, which changes how light bends (refraction).
+
+The DS18B20 Temperature sensor sits in the sample beaker.
+
+The ESP32 uses this temperature reading to apply a slight mathematical correction to the photodiode's baseline voltage, ensuring the laser readings stay accurate whether the water is ice cold or room temperature.
+
+**Project Title:** Cost-Effective Detection & Isolation System for Low Voltage Overhead Conductor Breakage
+
+**Domain:** Automation
+
+**Problem Statement:**
+
+Broken low-voltage AC distribution overhead conductors pose a serious electrocution risk to the public, particularly in areas with high earth resistance and low fault current — conditions under which conventional upstream fuses fail to detect the break. This leaves live, snapped conductors undetected for extended periods. Current utility practices rely on manual inspection or public reporting, both of which are slow, reactive, and delay isolation of the fault, endangering bystanders in the meantime.
+
+**Proposed Solution:**
+
+A low-cost, single-node IoT-based monitoring system that continuously tracks current flow and physical line vibration/tilt at a distribution point along the conductor. The system applies a **dual-condition confirmation logic** — requiring both an abnormal current signature *and* a physical vibration/tilt anomaly simultaneously — before triggering a fault response. This directly addresses the core weakness of existing fuse-based protection, which misses breaks precisely because fault current is too low to be detected on its own.
+
+On confirmed fault detection, the system:
+1. Triggers an immediate relay-based cutoff to de-energize the affected line
+2. Activates a local buzzer/LED alert at the fault site to warn nearby bystanders instantly
+3. Sends a real-time alert to a remote dashboard (digital twin) showing current draw, vibration status, and fault/cutoff event log
+
+**Sensors:** Current sensor (ACS712), vibration sensor, tilt sensor
+**Actuator:** Relay-controlled cutoff mechanism
+**Microcontroller:** ESP32
+**Digital Twin:** Live dashboard mirroring sensor readings and cutoff status in real time
+
+**Impact:** A significantly lower-cost, faster-responding alternative to existing utility fault-detection approaches, deployable at a fraction of the price of full SCADA systems, with the added benefit of immediate on-site warning rather than remote-only alerting.
+
+**Future Scope:** Extension to a multi-node network across distribution poles for segment-level fault localization within a feeder line.
+
+It is inspired from sih25063 that detects a broken low-voltage overhead conductor and we've added dual-condition confirmation logic and local on site buzzer or led alert
+
+1. ESP32 Development Board
+
+
+2. 5V Power Bank
+
+
+3. Micro-USB Cable
+
+
+4. 5V Peristaltic Pump
+
+
+5. 1-Channel 5V Relay Module (with Optocoupler)
+
+
+6. Analog Turbidity Sensor Module
+
+
+7. DS18B20 Waterproof Temperature Sensor Probe
+
+
+8. 5V 650nm Laser Diode Module
+
+
+9. BPW34 Photodiode
+
+
+10. LM358 Op-Amp IC
+
+
+11. Zero PCB Perfboard
+
+
+12. Male Header Pins
+
+
+13. Female Header Pins
+
+
+14. Jumper Wires / Spool Wire
+
+
+15. 4.7kΩ Resistor
+
+
+16. 10kΩ Resistor
+
+
+17. 20kΩ Resistor
+
+
+18. 100kΩ Resistor
+
+
+19. 1 Meter Silicone Tubing
+
+
+20. Inline Motorcycle Fuel Filter
+
+
+21. 2 × Glass Beakers / Clear Plastic Cups
+
+
+22. Black PVC Pipe Section with 2 End Caps
+
+
+23. Acrylic or MDF Boards
+
+
+24. Black Electrical Tape
+
+
+25. Sewing Needle
+

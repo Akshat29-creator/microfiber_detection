@@ -33,8 +33,8 @@ export default function DashboardPage() {
 
   const displayVoltageHistory = voltageHistory.length > 0
     ? voltageHistory
-    : (mode === 'real' && !connected
-        ? []
+    : (mode === 'real'
+        ? []  // Real mode: never show fake chart data — wait for actual ESP32 ADC readings
         : Array.from({ length: 24 }, (_, i) => ({
             ts: +(i * 0.2).toFixed(1),
             v: +(3.02 + Math.sin(i * 0.5) * 0.03 + (i % 2 === 0 ? 0.01 : -0.01)).toFixed(3),
@@ -169,7 +169,7 @@ export default function DashboardPage() {
             {mode === 'real' && !connected ? (
               <>-- <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>V</span></>
             ) : (
-              <>{(sensors.photodiode > 0 ? sensors.photodiode : 3.00).toFixed(2)} <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>V</span></>
+              <>{sensors.photodiode.toFixed(2)} <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>V</span></>
             )}
           </div>
           <span className={`metric-badge ${mode === 'real' && !connected ? 'rose' : (sensors.photodiode < 2.50 && sensors.photodiode > 0 ? 'rose' : 'cyan')}`}>
@@ -187,7 +187,7 @@ export default function DashboardPage() {
             {mode === 'real' && !connected ? (
               <>-- <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>V</span></>
             ) : (
-              <>{(sensors.turbidity > 0 ? sensors.turbidity : 4.20).toFixed(2)} <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>V</span></>
+              <>{sensors.turbidity.toFixed(2)} <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>V</span></>
             )}
           </div>
           <span className={`metric-badge ${mode === 'real' && !connected ? 'gray' : (sensors.turbidity >= 2.50 ? 'green' : sensors.turbidity > 0 ? 'amber' : 'cyan')}`}>
@@ -324,7 +324,7 @@ export default function DashboardPage() {
             <div style={{ padding: '8px 10px', borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
               <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>TRANSMISSIVITY</div>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent-cyan)', fontFamily: "'JetBrains Mono', monospace" }}>
-                {Math.min(100, Math.max(0, ((sensors.photodiode > 0 ? sensors.photodiode : 3.02) / 3.05 * 100))).toFixed(1)}%
+                {mode === 'real' && !connected ? '--' : `${Math.min(100, Math.max(0, (sensors.photodiode / 3.05 * 100))).toFixed(1)}%`}
               </div>
             </div>
             <div style={{ padding: '8px 10px', borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>

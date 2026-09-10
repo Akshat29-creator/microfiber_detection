@@ -21,10 +21,12 @@ export default function SystemPage() {
 
   const displayVoltageHistory = voltageHistory.length > 0
     ? voltageHistory
-    : Array.from({ length: 24 }, (_, i) => ({
-        ts: +(i * 0.2).toFixed(1),
-        v: +(3.01 + Math.sin(i * 0.5) * 0.03 + (i % 2 === 0 ? 0.01 : -0.01)).toFixed(3),
-      }));
+    : (mode === 'real'
+        ? []  // Real mode: never generate fake voltage chart data
+        : Array.from({ length: 24 }, (_, i) => ({
+            ts: +(i * 0.2).toFixed(1),
+            v: +(3.01 + Math.sin(i * 0.5) * 0.03 + (i % 2 === 0 ? 0.01 : -0.01)).toFixed(3),
+          })));
 
   const dsStructures = [
     { name: 'Sensor Log (SLL)', size: systemStatus.sensorLogSize || sensorLog.length, desc: 'Singly Linked List' },
@@ -38,10 +40,10 @@ export default function SystemPage() {
   const hwComponents = [
     { label: '12V Water Pump', value: systemStatus.pump || 'OFF', icon: Droplets, active: systemStatus.pump === 'RUNNING', badge: systemStatus.pump === 'RUNNING' ? 'badge-cyan' : 'badge-red' },
     { label: '650nm Laser Diode', value: systemStatus.laser || 'OFF', icon: Zap, active: systemStatus.laser === 'ON', badge: systemStatus.laser === 'ON' ? 'badge-red' : 'badge-yellow' },
-    { label: 'BPW34 Photodiode', value: `${sensors.photodiode.toFixed(3)} V`, icon: Activity, active: sensors.photodiode > 0, badge: 'badge-cyan' },
-    { label: 'Turbidity Sensor', value: `${sensors.turbidity.toFixed(3)} V`, icon: Droplets, active: sensors.turbidity > 0, badge: sensors.turbidity >= 2.5 ? 'badge-green' : 'badge-yellow' },
+    { label: 'BPW34 Photodiode', value: (mode === 'real' && !connected) ? '-- V' : `${sensors.photodiode.toFixed(3)} V`, icon: Activity, active: mode === 'demo' || (connected && sensors.photodiode > 0), badge: (mode === 'real' && !connected) ? 'badge-red' : 'badge-cyan' },
+    { label: 'Turbidity Sensor', value: (mode === 'real' && !connected) ? '-- V' : `${sensors.turbidity.toFixed(3)} V`, icon: Droplets, active: mode === 'demo' || (connected && sensors.turbidity > 0), badge: (mode === 'real' && !connected) ? 'badge-red' : (sensors.turbidity >= 2.5 ? 'badge-green' : 'badge-yellow') },
     { label: 'DS18B20 Thermistor', value: (mode === 'real' && !connected) ? '-- °C' : `${sensors.temperature.toFixed(1)} °C`, icon: Thermometer, active: mode === 'demo' || connected, badge: (mode === 'real' && !connected) ? 'badge-red' : 'badge-green' },
-    { label: 'ESP32 MCU Core', value: `${(systemStatus.freeHeap / 1024).toFixed(0)} KB free`, icon: Cpu, active: true, badge: 'badge-blue' },
+    { label: 'ESP32 MCU Core', value: (mode === 'real' && !connected) ? '-- KB free' : `${(systemStatus.freeHeap / 1024).toFixed(0)} KB free`, icon: Cpu, active: mode === 'demo' || connected, badge: (mode === 'real' && !connected) ? 'badge-red' : 'badge-blue' },
   ];
 
   return (

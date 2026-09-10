@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useWS } from '@/context/WebSocketContext';
 import {
   LayoutDashboard, Play, List, ArrowLeftRight, Circle, ArrowUpDown,
-  Search, Layers, Bell, GitBranch, Cpu, Activity, Wifi, WifiOff
+  Search, Layers, Bell, GitBranch, Cpu, Activity, Wifi, WifiOff, Loader
 } from 'lucide-react';
 
 interface NavItem {
@@ -28,6 +28,8 @@ export default function Sidebar() {
     setEspIp,
     connect,
     disconnect,
+    connecting,
+    connectionError,
     sensorLog,
     detections,
     circularBuffer,
@@ -113,11 +115,29 @@ export default function Sidebar() {
         {mode === 'real' ? (
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-              {connected ? <Wifi size={14} color="#10b981" /> : <WifiOff size={14} color="#f43f5e" />}
-              <span style={{ fontSize: 12, fontWeight: 600, color: connected ? '#34d399' : '#f87171' }}>
-                {connected ? 'Hardware Online' : 'Hardware Disconnected'}
+              {connecting
+                ? <Loader size={14} color="#facc15" style={{ animation: 'spin 1s linear infinite' }} />
+                : connected
+                  ? <Wifi size={14} color="#10b981" />
+                  : <WifiOff size={14} color="#f43f5e" />}
+              <span style={{ fontSize: 12, fontWeight: 600, color: connecting ? '#facc15' : connected ? '#34d399' : '#f87171' }}>
+                {connecting ? 'Connecting...' : connected ? 'Hardware Online' : 'Hardware Disconnected'}
               </span>
             </div>
+            {connectionError && (
+              <div style={{
+                fontSize: 10,
+                color: '#fca5a5',
+                background: 'rgba(244, 63, 94, 0.12)',
+                border: '1px solid rgba(244, 63, 94, 0.25)',
+                borderRadius: 6,
+                padding: '6px 8px',
+                marginBottom: 8,
+                lineHeight: 1.35,
+              }}>
+                ⚠ {connectionError}
+              </div>
+            )}
             <div style={{ display: 'flex', gap: 6 }}>
               <input
                 className="input"
@@ -125,13 +145,15 @@ export default function Sidebar() {
                 value={espIp}
                 onChange={(e) => setEspIp(e.target.value)}
                 placeholder="ESP32 IP"
+                disabled={connecting}
               />
               <button
                 className={`btn ${connected ? 'btn-danger' : 'btn-primary'}`}
-                style={{ fontSize: 11, padding: '5px 10px' }}
+                style={{ fontSize: 11, padding: '5px 10px', minWidth: 72, opacity: connecting ? 0.7 : 1 }}
                 onClick={connected ? disconnect : connect}
+                disabled={connecting}
               >
-                {connected ? 'Disconnect' : 'Connect'}
+                {connecting ? 'Trying...' : connected ? 'Disconnect' : 'Connect'}
               </button>
             </div>
           </div>

@@ -40,6 +40,8 @@ export interface SimSampleResult {
 interface WSState {
   mode: AppMode;
   connected: boolean;
+  connecting: boolean;
+  connectionError: string;
   espIp: string;
   setEspIp: (ip: string) => void;
   connect: () => void;
@@ -92,8 +94,11 @@ const WSContext = createContext<WSState | null>(null);
 export function WebSocketProvider({ children, mode }: { children: React.ReactNode; mode: AppMode }) {
   // WebSocket state (for real mode)
   const [connected, setConnected] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [connectionError, setConnectionError] = useState('');
   const [espIp, setEspIp] = useState('192.168.1.100');
   const wsRef = useRef<WebSocket | null>(null);
+  const connectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Shared UI state
   const [sensors, setSensors] = useState<SensorData>({ photodiode: 0, temperature: 25, turbidity: 0 });
@@ -359,23 +364,67 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
   const connectWS = useCallback(() => {
     if (mode !== 'real') return;
     if (wsRef.current) wsRef.current.close();
+    if (connectTimeoutRef.current) clearTimeout(connectTimeoutRef.current);
+
+    // Validate IP format
+    const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+    if (!espIp.trim()) {
+      setConnectionError('Please enter an IP address');
+      return;
+    }
+    if (!ipPattern.test(espIp.trim())) {
+      setConnectionError(`Invalid IP format: "${espIp}"`);
+      return;
+    }
+
+    setConnecting(true);
+    setConnectionError('');
+
     try {
       const ws = new WebSocket(`ws://${espIp}:81`);
+
+      // Connection timeout — if no response in 5 seconds, treat as unreachable
+      connectTimeoutRef.current = setTimeout(() => {
+        if (ws.readyState !== WebSocket.OPEN) {
+          ws.close();
+          setConnecting(false);
+          setConnected(false);
+          setConnectionError(`Could not reach ESP32 at ${espIp}:81 — check IP and ensure device is powered on`);
+        }
+      }, 5000);
+
       ws.onopen = () => {
+        if (connectTimeoutRef.current) clearTimeout(connectTimeoutRef.current);
         setConnected(true);
-        // Request initial status immediately upon connection
+        setConnecting(false);
+        setConnectionError('');
         ws.send(JSON.stringify({ cmd: 'status' }));
       };
-      ws.onclose = () => setConnected(false);
-      ws.onerror = () => setConnected(false);
+      ws.onclose = () => {
+        setConnected(false);
+        setConnecting(false);
+      };
+      ws.onerror = () => {
+        if (connectTimeoutRef.current) clearTimeout(connectTimeoutRef.current);
+        setConnected(false);
+        setConnecting(false);
+        setConnectionError(`Connection failed — ESP32 not found at ${espIp}:81`);
+      };
       ws.onmessage = handleMessage;
       wsRef.current = ws;
-    } catch { setConnected(false); }
+    } catch {
+      setConnected(false);
+      setConnecting(false);
+      setConnectionError('WebSocket error — check browser console');
+    }
   }, [espIp, handleMessage, mode]);
 
   const disconnect = useCallback(() => {
+    if (connectTimeoutRef.current) clearTimeout(connectTimeoutRef.current);
     if (wsRef.current) { wsRef.current.close(); wsRef.current = null; }
     setConnected(false);
+    setConnecting(false);
+    setConnectionError('');
   }, []);
 
   const sendCommand = useCallback((cmd: object) => {
@@ -404,6 +453,7 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
   return (
     <WSContext.Provider value={{
       mode, connected: mode === 'demo' ? true : connected,
+      connecting, connectionError,
       espIp, setEspIp, connect: connectWS, disconnect, sendCommand,
       sensors, detections, alerts, sensorLog, calibrationStack, sortResults,
       systemStatus, voltageHistory, circularBuffer, bstData, simulationProgress,

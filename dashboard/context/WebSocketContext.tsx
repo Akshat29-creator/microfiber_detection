@@ -309,7 +309,12 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
           }]);
           break;
         case 'alert':
-          setAlerts(prev => [msg as AlertData, ...prev].slice(0, 50));
+          setAlerts(prev => [{
+            type: msg.alertType ?? msg.type ?? 'INFO',
+            message: msg.message ?? '',
+            timestamp: msg.timestamp ?? Date.now() / 1000,
+            priority: msg.priority ?? 4,
+          }, ...prev].slice(0, 50));
           break;
         case 'sensorReading':
           setSensorLog(prev => [...prev, msg as SensorReading]);

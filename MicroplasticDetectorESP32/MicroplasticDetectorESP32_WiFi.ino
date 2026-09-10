@@ -591,7 +591,16 @@ void handleWebSocketCommand(const String& payload) {
         wsSendStatus();
     }
     else if (payload.indexOf("\"cmd\":\"events\"") >= 0) {
-        if (payload.indexOf("\"action\":\"deleteById\"") >= 0) {
+        if (payload.indexOf("\"action\":\"add\"") >= 0) {
+            int tsIdx = payload.indexOf("\"ts\":");
+            int dIdx = payload.indexOf("\"drop\":");
+            float ts = tsIdx >= 0 ? payload.substring(tsIdx + 5).toFloat() : simulationTime;
+            float drop = dIdx >= 0 ? payload.substring(dIdx + 7).toFloat() : 0.2;
+            MicroplasticEvent evt(ts, drop, 3.0, 2.0, 25.0);
+            eventHistory.append(evt);
+            detectionTree.insert(evt);
+            wsSendDetection(evt);
+        } else if (payload.indexOf("\"action\":\"deleteById\"") >= 0) {
             int idIdx = payload.indexOf("\"id\":");
             int id = idIdx >= 0 ? payload.substring(idIdx + 5).toInt() : 0;
             eventHistory.deleteByID(id);

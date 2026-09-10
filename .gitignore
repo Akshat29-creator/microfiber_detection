@@ -11,3 +11,18 @@ $RECYCLE.BIN/
 *.swp
 *~
 *.bak
+
+# Node & Build artifacts
+node_modules/
+.next/
+.next-demo/
+.next-real/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+
+# Compiled executables
+*.exe
+*.o
+*.obj

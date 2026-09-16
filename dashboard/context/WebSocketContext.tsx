@@ -304,6 +304,13 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
           break;
         case 'detection':
           setDetections(prev => [...prev, msg as DetectionEvent]);
+          setBstData(prev => ({
+            ...prev,
+            inorder: [...prev.inorder, msg as DetectionEvent],
+            preorder: [...prev.preorder, msg as DetectionEvent],
+            size: (prev.size || 0) + 1,
+            height: Math.max(1, Math.ceil(Math.log2((prev.size || 0) + 2))),
+          }));
           setSimResults(prev => [...prev, {
             type: 'detection',
             ts: msg.timestamp ?? Date.now() / 1000,
@@ -324,6 +331,16 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
         case 'sensorReading':
           setSensorLog(prev => [...prev, msg as SensorReading]);
           setVoltageHistory(prev => [...prev.slice(-99), { ts: msg.timestamp, v: msg.voltage }]);
+          setCircularBuffer(prev => {
+            const nextSlots = [...prev.slots, msg as SensorReading].slice(-10);
+            const avg = nextSlots.reduce((sum, r) => sum + r.voltage, 0) / (nextSlots.length || 1);
+            return {
+              ...prev,
+              slots: nextSlots,
+              used: nextSlots.length,
+              avg,
+            };
+          });
           if (msg.sensorType === 'TURBIDITY' && !msg.valid) {
             setSimResults(prev => [...prev, {
               type: 'rejected',
@@ -352,10 +369,51 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
           }
           break;
         case 'simProgress':
+          if (msg.phase === 'CALIBRATING' || msg.current === 0) {
+            setSimResults([]);
+          }
           setSimulationProgress(msg);
           break;
         case 'searchResult':
           setSearchResult(msg);
+          break;
+        case 'calibState':
+          if (msg.action === 'push') {
+            setCalibrationStack(prev => [{
+              baseline: msg.baseline ?? 3.0,
+              threshold: msg.threshold ?? 2.5,
+              correction: 1.0,
+              timestamp: msg.timestamp ?? Date.now() / 1000,
+              description: msg.desc ?? 'Hardware Snapshot'
+            }, ...prev]);
+          } else if (msg.action === 'undo') {
+            setCalibrationStack(prev => prev.slice(1));
+          }
+          break;
+        case 'sensorLogAction':
+          if (msg.action === 'deleteFirst') {
+            setSensorLog(prev => prev.slice(1));
+          } else if (msg.action === 'deleteLast') {
+            setSensorLog(prev => prev.slice(0, -1));
+          }
+          break;
+        case 'eventAction':
+          if (msg.action === 'deleteById' && msg.id !== undefined) {
+            setDetections(prev => prev.filter(e => e.id !== msg.id));
+            setBstData(prev => ({
+              ...prev,
+              inorder: prev.inorder.filter(e => e.id !== msg.id),
+              preorder: prev.preorder.filter(e => e.id !== msg.id),
+              size: Math.max(0, prev.size - 1),
+            }));
+          }
+          break;
+        case 'alertAction':
+          if (msg.action === 'processOne') {
+            setAlerts(prev => prev.slice(0, -1));
+          } else if (msg.action === 'processAll') {
+            setAlerts([]);
+          }
           break;
       }
     } catch { /* ignore */ }

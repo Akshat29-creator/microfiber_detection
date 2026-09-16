@@ -436,6 +436,7 @@ void handleWebSocketCommand(const String& payload) {
         calibrationStack.push(CalibrationState(corrected, turbiditySensor.getThreshold(),
                                                 tempSensor.getCorrectionFactor(),
                                                 simulationTime, "Initial"));
+        wsBroadcast("{\"type\":\"calibState\",\"action\":\"push\",\"baseline\":" + String(corrected, 3) + ",\"threshold\":" + String(turbiditySensor.getThreshold(), 3) + ",\"timestamp\":" + String(simulationTime, 2) + ",\"desc\":\"Initial Calibration\"}");
 
         pumpController.start();
         laserChamber.laserActivate();
@@ -491,14 +492,20 @@ void handleWebSocketCommand(const String& payload) {
             int vIdx = payload.indexOf("\"voltage\":");
             float ts = tsIdx >= 0 ? payload.substring(tsIdx + 5).toFloat() : simulationTime;
             float v = vIdx >= 0 ? payload.substring(vIdx + 10).toFloat() : 2.9;
-            sensorLog.append(SensorReading(ts, v, "PHOTODIODE"));
+            SensorReading r(ts, v, "PHOTODIODE");
+            sensorLog.append(r);
+            wsSendSensorReading(r);
         } else if (payload.indexOf("\"action\":\"addBeginning\"") >= 0) {
             float v = (analogRead(PHOTODIODE_PIN) / 4095.0f) * 3.3f;
-            sensorLog.insertAtBeginning(SensorReading(0, v, "PHOTODIODE"));
+            SensorReading r(0, v, "PHOTODIODE");
+            sensorLog.insertAtBeginning(r);
+            wsSendSensorReading(r);
         } else if (payload.indexOf("\"action\":\"deleteFirst\"") >= 0) {
             sensorLog.deleteFromBeginning();
+            wsBroadcast("{\"type\":\"sensorLogAction\",\"action\":\"deleteFirst\"}");
         } else if (payload.indexOf("\"action\":\"deleteLast\"") >= 0) {
             sensorLog.deleteFromEnd();
+            wsBroadcast("{\"type\":\"sensorLogAction\",\"action\":\"deleteLast\"}");
         }
         wsSendStatus();
     }
@@ -534,18 +541,22 @@ void handleWebSocketCommand(const String& payload) {
             calibrationStack.push(CalibrationState(bv, tt, 1.0, simulationTime, "Dashboard"));
             laserChamber.setBaseline(bv);
             turbiditySensor.setThreshold(tt);
+            wsBroadcast("{\"type\":\"calibState\",\"action\":\"push\",\"baseline\":" + String(bv, 3) + ",\"threshold\":" + String(tt, 3) + ",\"timestamp\":" + String(simulationTime, 2) + ",\"desc\":\"Dashboard Snapshot\"}");
         } else if (payload.indexOf("\"action\":\"undo\"") >= 0) {
             CalibrationState restored = calibrationStack.undo();
             laserChamber.setBaseline(restored.baselineVoltage);
             turbiditySensor.setThreshold(restored.turbidityThreshold);
+            wsBroadcast("{\"type\":\"calibState\",\"action\":\"undo\",\"baseline\":" + String(restored.baselineVoltage, 3) + ",\"threshold\":" + String(restored.turbidityThreshold, 3) + ",\"timestamp\":" + String(restored.timestamp, 2) + "}");
         }
         wsSendStatus();
     }
     else if (payload.indexOf("\"cmd\":\"alertQueue\"") >= 0) {
         if (payload.indexOf("\"action\":\"processAll\"") >= 0) {
             alertQueue.processAll();
+            wsBroadcast("{\"type\":\"alertAction\",\"action\":\"processAll\"}");
         } else if (payload.indexOf("\"action\":\"processOne\"") >= 0) {
             if (!alertQueue.isEmpty()) alertQueue.dequeue();
+            wsBroadcast("{\"type\":\"alertAction\",\"action\":\"processOne\"}");
         } else if (payload.indexOf("\"action\":\"addPriority\"") >= 0) {
             int pIdx = payload.indexOf("\"priority\":");
             int priority = pIdx >= 0 ? payload.substring(pIdx + 11).toInt() : 4;
@@ -572,6 +583,7 @@ void handleWebSocketCommand(const String& payload) {
             MicroplasticEvent evt(ts, drop, 3.0, 2.0, 25.0);
             detectionTree.insert(evt);
             eventHistory.append(evt);
+            wsSendDetection(evt);
         }
         wsSendStatus();
     }
@@ -580,12 +592,16 @@ void handleWebSocketCommand(const String& payload) {
             int vIdx = payload.indexOf("\"voltage\":");
             float v = vIdx >= 0 ? payload.substring(vIdx + 10).toFloat() : 2.9;
             simulationTime += 0.5;
-            slidingWindow.insert(SensorReading(simulationTime, v, "PHOTODIODE"));
+            SensorReading r(simulationTime, v, "PHOTODIODE");
+            slidingWindow.insert(r);
+            wsSendSensorReading(r);
         } else if (payload.indexOf("\"action\":\"fill\"") >= 0) {
             for (int i = 0; i < 10; i++) {
                 float v = (analogRead(PHOTODIODE_PIN) / 4095.0f) * 3.3f;
                 simulationTime += 0.1;
-                slidingWindow.insert(SensorReading(simulationTime, v, "PHOTODIODE"));
+                SensorReading r(simulationTime, v, "PHOTODIODE");
+                slidingWindow.insert(r);
+                wsSendSensorReading(r);
             }
         }
         wsSendStatus();
@@ -604,6 +620,7 @@ void handleWebSocketCommand(const String& payload) {
             int idIdx = payload.indexOf("\"id\":");
             int id = idIdx >= 0 ? payload.substring(idIdx + 5).toInt() : 0;
             eventHistory.deleteByID(id);
+            wsBroadcast("{\"type\":\"eventAction\",\"action\":\"deleteById\",\"id\":" + String(id) + "}");
         }
         wsSendStatus();
     }

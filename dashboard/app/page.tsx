@@ -391,7 +391,7 @@ export default function DashboardPage() {
               }}
             >
               <div>
-                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Laser Diode (GPIO 25)</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Laser Diode (GPIO 27)</div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: isLaserOn ? 'var(--accent-rose)' : 'var(--text-primary)' }}>
                   {isLaserOn ? '650nm ON' : 'OFF'}
                 </div>

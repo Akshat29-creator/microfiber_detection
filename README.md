@@ -46,6 +46,7 @@ This project strictly adheres to the MIT Manipal DSA Project Guidelines:
 ```text
 kirti_project/
 ├── README.md                           <-- (This Document) Master Architecture & Usage Guide
+├── COMPLETE_STEP_BY_STEP_SETUP_GUIDE.md<-- 📘 Master Step-by-Step Hardware Wiring, Node.js & Web Connection Guide
 ├── HOW_TO_RUN_ESP32.md                 <-- Dedicated Arduino IDE & ESP32 Flashing Guide
 ├── MENU_AND_FUNCTIONS_GUIDE.md         <-- Complete Menu Options & Function Architecture Guide
 │

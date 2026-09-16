@@ -949,6 +949,9 @@ void setup() {
     Serial.println("  ==========================================");
 
     // Connect to WiFi
+    WiFi.mode(WIFI_STA);              // Station mode only (don't create an AP)
+    WiFi.setAutoReconnect(true);      // Auto-reconnect if signal drops
+    WiFi.persistent(true);            // Remember credentials across reboots
     Serial.print("\n  Connecting to WiFi: "); Serial.print(WIFI_SSID);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
     int attempts = 0;
@@ -983,10 +986,33 @@ void setup() {
 //  LOOP — Serial + WebSocket
 // ============================================================
 unsigned long lastStatusBroadcast = 0;
+unsigned long lastWiFiCheck = 0;
 
 void loop() {
     // Process WebSocket events
     webSocket.loop();
+
+    // WiFi watchdog — check every 10 seconds and reconnect if dropped
+    if (millis() - lastWiFiCheck > 10000) {
+        lastWiFiCheck = millis();
+        if (WiFi.status() != WL_CONNECTED) {
+            Serial.println("  [WiFi] Connection lost! Reconnecting...");
+            WiFi.disconnect();
+            WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+            int retries = 0;
+            while (WiFi.status() != WL_CONNECTED && retries < 20) {
+                delay(500);
+                Serial.print(".");
+                retries++;
+            }
+            if (WiFi.status() == WL_CONNECTED) {
+                Serial.print("\n  [WiFi] Reconnected! IP: ");
+                Serial.println(WiFi.localIP());
+            } else {
+                Serial.println("\n  [WiFi] Reconnect failed. Will retry in 10s.");
+            }
+        }
+    }
 
     // Periodically broadcast real hardware sensor data to connected dashboard (every 1 second)
     if (wsClientConnected && millis() - lastStatusBroadcast > 1000) {

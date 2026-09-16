@@ -21,10 +21,11 @@
    - [Step 4: Install ESP32 Board Core in Arduino IDE](#step-4-install-esp32-board-core-in-arduino-ide)
    - [Step 5: Install Required Arduino WebSockets Library](#step-5-install-required-arduino-websockets-library)
 4. [Flashing Firmware onto the ESP32](#-flashing-firmware-onto-the-esp32)
-   - [Step 1: Configure WiFi Credentials](#step-1-configure-wifi-credentials)
-   - [Step 2: Arduino IDE Board & Port Configuration](#step-2-arduino-ide-board--port-configuration)
-   - [Step 3: Upload Sketch (The Boot Button Trick)](#step-3-upload-sketch-the-boot-button-trick)
-   - [Step 4: Open Serial Monitor & Find ESP32 IP Address](#step-4-open-serial-monitor--find-esp32-ip-address)
+   - [Step 1: Network Topology & WiFi Setup (Which Device Hosts the Hotspot?)](#step-1-network-topology--wifi-setup-which-device-hosts-the-hotspot)
+   - [Step 2: Configure WiFi Credentials in Firmware](#step-2-configure-wifi-credentials-in-firmware)
+   - [Step 3: Arduino IDE Board & Port Configuration](#step-3-arduino-ide-board--port-configuration)
+   - [Step 4: Upload Sketch (The Boot Button Trick)](#step-4-upload-sketch-the-boot-button-trick)
+   - [Step 5: Open Serial Monitor & Find ESP32 IP Address](#step-5-open-serial-monitor--find-esp32-ip-address)
 5. [Installing & Running the Web Dashboard](#-installing--running-the-web-dashboard)
    - [Step 1: Install Dashboard Dependencies (`npm install`)](#step-1-install-dashboard-dependencies-npm-install)
    - [Step 2: Launching Real Hardware Mode (Port 3001)](#step-2-launching-real-hardware-mode-port-3001)
@@ -271,7 +272,80 @@ ESP32 boards communicate with your PC via a USB-to-UART chip.
 
 ---
 
-### Step 1: Configure WiFi Credentials
+### Step 1: Network Topology & WiFi Setup (Which Device Hosts the Hotspot?)
+
+Before uploading code, your **Laptop** and the **ESP32** must be connected to the **exact same Local Area Network (LAN)** so the web browser can communicate with the ESP32 WebSocket server.
+
+Choose one of the following methods:
+
+#### 📱 Option A: Mobile Phone Hotspot (Strongly Recommended for College & Demos)
+Your smartphone creates a portable WiFi network. Both your laptop and the ESP32 connect as clients to your phone's hotspot.
+
+```text
+               +----------------------------------+
+               |   📱 Mobile Phone Hotspot        |
+               |   (Acts as Local Router/Bridge)  |
+               +-----------------+----------------+
+                                 |
+                 +---------------+---------------+
+                 |                               |
+                 ▼ (WiFi)                        ▼ (WiFi 2.4 GHz)
+      +----------------------+        +----------------------+
+      | 💻 Laptop / PC       |        | ⚡ ESP32 Board       |
+      | IP: 192.168.43.50    |        | IP: 192.168.43.105   |
+      | Next.js on :3001     |        | WebSocket on :81     |
+      +----------+-----------+        +----------+-----------+
+                 |                               |
+                 +<====== Bidirectional ========>+
+                        WebSocket (ws://...:81)
+```
+
+* **Why this is the best choice:**
+  * **Bypasses College Firewalls:** College/hostel WiFi networks have *Access Point (Client) Isolation* enabled, which prevents two devices on the same WiFi from communicating with each other. A phone hotspot has zero isolation.
+  * **No Captive Portal:** College WiFi requires browser login/passwords that an ESP32 cannot handle. Phone hotspots use standard WPA2-PSK passwords.
+  * **Completely Portable:** Works anywhere — in a classroom, project lab, or during an external examiner evaluation.
+
+* **Critical Phone Settings (Must be 2.4 GHz):**
+  * **Android:** Go to *Settings ➔ Portable Hotspot / Tethering*. Under *Hotspot Settings*, change **AP Band** from 5.0 GHz to **`2.4 GHz band`**. (ESP32 hardware does not support 5 GHz WiFi).
+  * **iPhone:** Go to *Settings ➔ Personal Hotspot*. Turn **ON** the switch labeled **`Maximize Compatibility`** (this forces the iPhone to broadcast on 2.4 GHz instead of 5 GHz).
+
+---
+
+#### 💻 Option B: Windows Laptop Mobile Hotspot (No Phone Required)
+Your Windows laptop broadcasts its own WiFi network using its built-in WiFi card, and the ESP32 connects directly to your laptop.
+
+```text
+      +--------------------------------------------------------+
+      | 💻 Windows Laptop                                      |
+      |   1. Creates Windows Mobile Hotspot (192.168.137.1)    |
+      |   2. Hosts Web Dashboard on http://localhost:3001      |
+      +---------------------------+----------------------------+
+                                  |
+                                  ▼ (WiFi 2.4 GHz Hotspot)
+                      +----------------------+
+                      | ⚡ ESP32 Board       |
+                      | IP: 192.168.137.xxx  |
+                      | WebSocket on :81     |
+                      +----------------------+
+```
+
+* **How to configure on Windows 10 / 11:**
+  1. Press `Win + I` to open **Settings** ➔ Click **Network & internet** ➔ **Mobile hotspot**.
+  2. Click **Edit**:
+     - Network name: e.g., `MicroDetector`
+     - Network password: e.g., `password123`
+     - Network band: Select **`2.4 GHz`** or **`Any available`**.
+  3. Toggle Mobile hotspot **ON**.
+  4. Once your ESP32 connects, its IP address will appear right inside the Windows Mobile Hotspot settings page under **Connected devices**!
+
+---
+
+#### 🏠 Option C: Home WiFi Router
+If you are working from home, both your laptop and the ESP32 can simply connect to your regular home WiFi router. Ensure you select the **2.4 GHz SSID** if your router broadcasts separate 2.4 GHz and 5 GHz bands.
+
+---
+
+### Step 2: Configure WiFi Credentials in Firmware
 1. In Arduino IDE, open:
    `d:\kirti_project\MicroplasticDetectorESP32\MicroplasticDetectorESP32_WiFi.ino`
 2. Scroll to lines 36–37:
@@ -282,12 +356,21 @@ ESP32 boards communicate with your PC via a USB-to-UART chip.
    const char* WIFI_SSID     = "YOUR_WIFI_SSID";
    const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
    ```
-3. Replace with your actual WiFi network name and password.
-   > 💡 **Important:** The ESP32 supports **2.4 GHz WiFi networks**. If your router has separate 2.4 GHz and 5 GHz networks, select the 2.4 GHz one. Alternatively, turn on your **Phone's Mobile Hotspot** (set AP Band to 2.4 GHz) and connect both your laptop and ESP32 to it.
+3. Replace with your actual Hotspot or WiFi name and password:
+   - Example for Phone Hotspot:
+     ```cpp
+     const char* WIFI_SSID     = "Akshat_Phone";
+     const char* WIFI_PASSWORD = "password123";
+     ```
+   - Example for Laptop Hotspot:
+     ```cpp
+     const char* WIFI_SSID     = "MicroDetector";
+     const char* WIFI_PASSWORD = "password123";
+     ```
 
 ---
 
-### Step 2: Arduino IDE Board & Port Configuration
+### Step 3: Arduino IDE Board & Port Configuration
 1. In the top toolbar, open the **Tools** menu:
    - **Board** ➔ **esp32** ➔ Select **ESP32 Dev Module** (or *NodeMCU-32S* / *DOIT ESP32 DEVKIT V1*).
    - **Port** ➔ Select your ESP32's COM port (e.g. `COM3` or `COM5`).
@@ -295,7 +378,7 @@ ESP32 boards communicate with your PC via a USB-to-UART chip.
 
 ---
 
-### Step 3: Upload Sketch (The Boot Button Trick)
+### Step 4: Upload Sketch (The Boot Button Trick)
 1. Click the **Upload** arrow button (`->`) in the top left toolbar (or press `Ctrl + U`).
 2. Arduino IDE will compile the code. When the console displays:
    ```text
@@ -312,11 +395,13 @@ ESP32 boards communicate with your PC via a USB-to-UART chip.
 
 ---
 
-### Step 4: Open Serial Monitor & Find ESP32 IP Address
+### Step 5: Open Serial Monitor & Find ESP32 IP Address
+
+You need the ESP32's assigned IP address to connect the web dashboard. You can find it in two ways:
+
+#### Method A: Using Arduino IDE Serial Monitor (Standard)
 1. Click the **Serial Monitor** icon in the top right corner of Arduino IDE (or press `Ctrl + Shift + M`).
-2. In the Serial Monitor toolbar:
-   - Set the baud rate dropdown to **115200 baud**.
-   - Set the line ending dropdown to **Newline**.
+2. Set the baud rate dropdown to **115200 baud** and line ending to **Newline**.
 3. Press the physical **EN** (or **RST**) button on your ESP32 board once to restart it.
 4. The Serial Monitor will print:
    ```text
@@ -324,12 +409,16 @@ ESP32 boards communicate with your PC via a USB-to-UART chip.
    |   MICROPLASTIC DETECTION SYSTEM        |
    |   DSA Project — ESP32 + WiFi Version   |
    ==========================================
-   [WiFi] Connecting to: YourWiFiName ..........
+   [WiFi] Connecting to: YourHotspotName ..........
    [WiFi] Connected successfully!
-   [WiFi] ESP32 IP Address: 192.168.1.45
+   [WiFi] ESP32 IP Address: 192.168.43.105
    [WS] WebSocket server started on port 81
    ```
-5. 📝 **Note down the ESP32 IP Address** (e.g., `192.168.1.45`). You will enter this into the web dashboard!
+5. 📝 **Note down the ESP32 IP Address** (e.g., `192.168.43.105`).
+
+#### Method B: Checking Hotspot Connected Devices (Without Serial Monitor)
+* **On Phone Hotspot:** Open *Settings ➔ Portable Hotspot ➔ Connected Devices*. You will see `espressif` or an unknown device listed along with its IP address (e.g., `192.168.43.105` on Android or `172.20.10.x` on iPhone).
+* **On Windows Hotspot:** Open *Settings ➔ Network & Internet ➔ Mobile Hotspot*. Under *Devices connected*, the ESP32's IP (`192.168.137.xxx`) is displayed directly on the screen!
 
 ---
 

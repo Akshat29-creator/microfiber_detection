@@ -188,14 +188,14 @@ Standard ESP32 boards use a USB-to-UART bridge chip:
 
 ## ⚡ ESP32 Firmware Setup & Flashing
 
-Inside the `MicroplasticDetectorESP32/` directory, you will find two sketches:
-- **`MicroplasticDetectorESP32_WiFi.ino`** *(Recommended)*: High-speed WebSocket server + Serial Monitor menu + Real Web Dashboard bridge.
-- **`MicroplasticDetectorESP32.ino`**: Standalone Serial-only version (no WiFi required).
+You will find two Arduino sketch directories:
+- **`MicroplasticDetectorESP32_WiFi/`** *(Recommended)*: Contains `MicroplasticDetectorESP32_WiFi.ino` with high-speed WebSocket server + Serial Monitor menu + Real Web Dashboard bridge.
+- **`MicroplasticDetectorESP32/`**: Contains `MicroplasticDetectorESP32.ino` for standalone Serial-only version (no WiFi required).
 
 ---
 
 ### Step 1: Configure WiFi Credentials
-1. In Arduino IDE, open **`MicroplasticDetectorESP32/MicroplasticDetectorESP32_WiFi.ino`**.
+1. In Arduino IDE, open **`MicroplasticDetectorESP32_WiFi/MicroplasticDetectorESP32_WiFi.ino`**.
 2. Check lines 36–37:
    ```cpp
    // ============================================================
@@ -447,19 +447,12 @@ kirti_project/
 ├── HOW_TO_RUN_ESP32.md                 <-- Master Setup & Run Guide (This File)
 ├── MENU_AND_FUNCTIONS_GUIDE.md         <-- Deep-dive into all C++ DSA functions
 ├── README.md                           <-- Academic overview & report
-├── MicroplasticDetectorESP32/          <-- Arduino ESP32 Firmware Folder
+├── MicroplasticDetectorESP32_WiFi/     <-- Primary Arduino ESP32 WiFi + Dashboard Sketch
 │   ├── MicroplasticDetectorESP32_WiFi.ino <-- WiFi + WebSocket + Serial Sketch (Primary)
+│   └── *.h                             <-- All 10 DSA Header Files
+├── MicroplasticDetectorESP32/          <-- Standalone Offline Serial Arduino Sketch
 │   ├── MicroplasticDetectorESP32.ino      <-- Standalone Offline Serial Sketch
-│   ├── SensorReading.h                 <-- Sensor Reading data class
-│   ├── MicroplasticEvent.h             <-- Detection Event data class
-│   ├── SensorLinkedList.h              <-- Singly Linked List implementation
-│   ├── EventDoublyList.h               <-- Doubly Linked List implementation
-│   ├── CircularBuffer.h                <-- Circular Linked List (Sliding Window)
-│   ├── AlertQueue.h                    <-- FIFO Queue & Priority Queue
-│   ├── CalibrationStack.h              <-- LIFO Stack (Undo/Redo)
-│   ├── DetectionBST.h                  <-- Binary Search Tree (3 Traversals)
-│   ├── SortingAlgorithms.h             <-- Bubble, Selection, Insertion, Merge, Quick Sort
-│   └── SearchAlgorithms.h              <-- Linear Search & Binary Search
+│   └── *.h                             <-- All 10 DSA Header Files
 └── dashboard/                          <-- Next.js 16 Web Dashboard
     ├── package.json                    <-- Scripts: "demo" (port 3000), "real" (port 3001)
     ├── start_demo.bat                  <-- 1-Click Launch Demo Mode (Port 3000)

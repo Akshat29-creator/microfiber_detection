@@ -347,7 +347,7 @@ If you are working from home, both your laptop and the ESP32 can simply connect 
 
 ### Step 2: Configure WiFi Credentials in Firmware
 1. In Arduino IDE, open:
-   `d:\kirti_project\MicroplasticDetectorESP32\MicroplasticDetectorESP32_WiFi.ino`
+   `d:\kirti_project\MicroplasticDetectorESP32_WiFi\MicroplasticDetectorESP32_WiFi.ino`
 2. Scroll to lines 36–37:
    ```cpp
    // ============================================================

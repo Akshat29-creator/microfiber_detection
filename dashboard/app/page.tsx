@@ -1,9 +1,8 @@
 'use client';
 import { useWS } from '@/context/WebSocketContext';
 import {
-  Activity, Droplets, Thermometer, Zap, AlertTriangle, Cpu,
-  List, ArrowLeftRight, Circle, Layers, GitBranch, ArrowRight,
-  Play, RotateCcw, CheckCircle2, ShieldAlert
+  Activity, Droplets, Thermometer, Zap, AlertTriangle,
+  ArrowRight, Play, CheckCircle2, ShieldAlert
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -20,7 +19,6 @@ export default function DashboardPage() {
     detections,
     connected,
     mode,
-    espIp,
     circularBuffer,
     calibrationStack,
     sensorLog,

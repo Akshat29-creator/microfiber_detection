@@ -1,16 +1,17 @@
 # 📘 Complete Step-by-Step Setup Guide: Hardware Wiring, Software Setup & Web Connection
 
-**Project:** Microplastic Detection & Water Environmental Analysis System  
-**Subject:** Cyber-Physical Systems (CPS) & Data Structures and Algorithms (DSA)  
-**Author:** Akshat Awasthi | B.Tech Cyber Physical Systems (CPS) | MIT Manipal  
-**Target Hardware:** ESP32 DevKit V1 / NodeMCU-32S  
-**Target Software:** Next.js 16 (Node.js LTS), Arduino IDE 2.x, WebSocket Telemetry (Port 81)  
+**Project:** Microplastic Detection & Water Environmental Analysis System
+**Subject:** Cyber-Physical Systems (CPS) & Data Structures and Algorithms (DSA)
+**Author:** Akshat Awasthi | B.Tech Cyber Physical Systems (CPS) | MIT Manipal
+**Target Hardware:** ESP32 DevKit V1 / NodeMCU-32S
+**Target Software:** Next.js 16 (Node.js LTS), Arduino IDE 2.x, WebSocket Telemetry (Port 81)
 
 ---
 
 ## 📋 Table of Contents
-1. [System Overview & Architecture](#-system-overview--architecture)
-2. [Hardware Components & Pin-by-Pin Wiring Guide](#-hardware-components--pin-by-pin-wiring-guide)
+
+1. [System Overview &amp; Architecture](#-system-overview--architecture)
+2. [Hardware Components &amp; Pin-by-Pin Wiring Guide](#-hardware-components--pin-by-pin-wiring-guide)
    - [Master Pinout Table](#master-pinout-table)
    - [Visual ASCII Circuit Schematic](#visual-ascii-circuit-schematic)
    - [Detailed Connection Steps for Every Part](#detailed-connection-steps-for-every-part)
@@ -21,22 +22,22 @@
    - [Step 4: Install ESP32 Board Core in Arduino IDE](#step-4-install-esp32-board-core-in-arduino-ide)
    - [Step 5: Install Required Arduino WebSockets Library](#step-5-install-required-arduino-websockets-library)
 4. [Flashing Firmware onto the ESP32](#-flashing-firmware-onto-the-esp32)
-   - [Step 1: Network Topology & WiFi Setup (Which Device Hosts the Hotspot?)](#step-1-network-topology--wifi-setup-which-device-hosts-the-hotspot)
+   - [Step 1: Network Topology &amp; WiFi Setup (Which Device Hosts the Hotspot?)](#step-1-network-topology--wifi-setup-which-device-hosts-the-hotspot)
    - [Step 2: Configure WiFi Credentials in Firmware](#step-2-configure-wifi-credentials-in-firmware)
-   - [Step 3: Arduino IDE Board & Port Configuration](#step-3-arduino-ide-board--port-configuration)
+   - [Step 3: Arduino IDE Board &amp; Port Configuration](#step-3-arduino-ide-board--port-configuration)
    - [Step 4: Upload Sketch (The Boot Button Trick)](#step-4-upload-sketch-the-boot-button-trick)
-   - [Step 5: Open Serial Monitor & Find ESP32 IP Address](#step-5-open-serial-monitor--find-esp32-ip-address)
-5. [Installing & Running the Web Dashboard](#-installing--running-the-web-dashboard)
+   - [Step 5: Open Serial Monitor &amp; Find ESP32 IP Address](#step-5-open-serial-monitor--find-esp32-ip-address)
+5. [Installing &amp; Running the Web Dashboard](#-installing--running-the-web-dashboard)
    - [Step 1: Install Dashboard Dependencies (`npm install`)](#step-1-install-dashboard-dependencies-npm-install)
    - [Step 2: Launching Real Hardware Mode (Port 3001)](#step-2-launching-real-hardware-mode-port-3001)
    - [Step 3: Launching Demo Simulation Mode (Port 3000)](#step-3-launching-demo-simulation-mode-port-3000)
    - [Step 4: Stopping Dashboard Servers (`stop_servers.bat`)](#step-4-stopping-dashboard-servers-stop_serversbat)
 6. [Connecting the Webpage to the ESP32](#-connecting-the-webpage-to-the-esp32)
    - [Step-by-Step Connection Process](#step-by-step-connection-process)
-   - [Understanding the IP Address & Port `:81`](#understanding-the-ip-address--port-81)
+   - [Understanding the IP Address &amp; Port `:81`](#understanding-the-ip-address--port-81)
    - [Visual Connection Status Indicators](#visual-connection-status-indicators)
-7. [Hardware Testing & System Verification](#-hardware-testing--system-verification)
-8. [Troubleshooting & Frequently Asked Questions (FAQ)](#-troubleshooting--frequently-asked-questions-faq)
+7. [Hardware Testing &amp; System Verification](#-hardware-testing--system-verification)
+8. [Troubleshooting &amp; Frequently Asked Questions (FAQ)](#-troubleshooting--frequently-asked-questions-faq)
 
 ---
 
@@ -70,26 +71,26 @@ This project connects physical water quality sensors and fluid actuators directl
 
 ### Master Pinout Table
 
-| Component | Component Pin | ESP32 DevKit Pin | Voltage Level | Notes / Protection |
-| :--- | :--- | :--- | :--- | :--- |
-| **Turbidity Sensor Module** | `Signal / A0` | **GPIO 34** | 0 to 3.3V Analog | Input-only pin (ADC1_CH6). |
-| | `VCC` | **VIN (5V) or 3V3** | 5V / 3.3V DC | Check module voltage rating. |
-| | `GND` | **GND** | 0V | Connect to common ground rail. |
-| **Photodiode Detector (LM358)** | `Analog OUT` | **GPIO 35** | 0 to 3.3V Analog | Input-only pin (ADC1_CH7). |
-| | `VCC` | **3V3** | 3.3V DC | Low-noise regulated 3.3V rail. |
-| | `GND` | **GND** | 0V | Connect to common ground rail. |
-| **DS18B20 Temperature Probe** | `Data (Yellow/White)`| **GPIO 4** | 3.3V Digital | **Requires 4.7kΩ resistor to 3.3V** |
-| | `VCC (Red)` | **3V3** | 3.3V DC | Power rail. |
-| | `GND (Black)` | **GND** | 0V | Common ground rail. |
-| **5V Relay Module (Pump Switch)**| `IN / Signal` | **GPIO 26** | 3.3V Digital Out | Active HIGH (HIGH = Pump ON). |
-| | `VCC` | **VIN (5V)** | 5V DC | Relay coil requires 5V to trigger. |
-| | `GND` | **GND** | 0V | Common ground rail. |
-| **650nm Red Laser Diode** | `Anode (+ / Red)` | **GPIO 27** | 3.3V Digital Out | HIGH = Laser ON, LOW = OFF. |
-| | `Cathode (- / Black)`| **GND** | 0V | Common ground rail. |
-| **12V Peristaltic Sample Pump** | `Positive (+)` | **Relay NO** | 12V DC | Switched through Relay contact. |
-| | `Negative (-)` | **12V PSU (-)** | 0V | Direct to 12V adapter Ground. |
-| **12V Power Adapter** | `Positive (+)` | **Relay COM** | 12V DC | Input to relay common terminal. |
-| | `Negative (-)` | **GND & Pump (-)**| 0V | Shared common ground rail. |
+| Component                               | Component Pin           | ESP32 DevKit Pin          | Voltage Level    | Notes / Protection                         |
+| :-------------------------------------- | :---------------------- | :------------------------ | :--------------- | :----------------------------------------- |
+| **Turbidity Sensor Module**       | `Signal / A0`         | **GPIO 34**         | 0 to 3.3V Analog | Input-only pin (ADC1_CH6).                 |
+|                                         | `VCC`                 | **VIN (5V) or 3V3** | 5V / 3.3V DC     | Check module voltage rating.               |
+|                                         | `GND`                 | **GND**             | 0V               | Connect to common ground rail.             |
+| **Photodiode Detector (LM358)**   | `Analog OUT`          | **GPIO 35**         | 0 to 3.3V Analog | Input-only pin (ADC1_CH7).                 |
+|                                         | `VCC`                 | **3V3**             | 3.3V DC          | Low-noise regulated 3.3V rail.             |
+|                                         | `GND`                 | **GND**             | 0V               | Connect to common ground rail.             |
+| **DS18B20 Temperature Probe**     | `Data (Yellow/White)` | **GPIO 4**          | 3.3V Digital     | **Requires 4.7kΩ resistor to 3.3V** |
+|                                         | `VCC (Red)`           | **3V3**             | 3.3V DC          | Power rail.                                |
+|                                         | `GND (Black)`         | **GND**             | 0V               | Common ground rail.                        |
+| **5V Relay Module (Pump Switch)** | `IN / Signal`         | **GPIO 26**         | 3.3V Digital Out | Active HIGH (HIGH = Pump ON).              |
+|                                         | `VCC`                 | **VIN (5V)**        | 5V DC            | Relay coil requires 5V to trigger.         |
+|                                         | `GND`                 | **GND**             | 0V               | Common ground rail.                        |
+| **650nm Red Laser Diode**         | `Anode (+ / Red)`     | **GPIO 27**         | 3.3V Digital Out | HIGH = Laser ON, LOW = OFF.                |
+|                                         | `Cathode (- / Black)` | **GND**             | 0V               | Common ground rail.                        |
+| **12V Peristaltic Sample Pump**   | `Positive (+)`        | **Relay NO**        | 12V DC           | Switched through Relay contact.            |
+|                                         | `Negative (-)`        | **12V PSU (-)**     | 0V               | Direct to 12V adapter Ground.              |
+| **12V Power Adapter**             | `Positive (+)`        | **Relay COM**       | 12V DC           | Input to relay common terminal.            |
+|                                         | `Negative (-)`        | **GND & Pump (-)**  | 0V               | Shared common ground rail.                 |
 
 ---
 
@@ -135,15 +136,18 @@ Common Breadboard 3.3V <=========| 3V3                         |
 ### Detailed Connection Steps for Every Part
 
 #### 1. Common Ground & Power Rails (Crucial First Step)
+
 1. Place the ESP32 onto a solderless breadboard.
 2. Connect one of the **GND** pins on the ESP32 to the blue/negative **(-) power rail** of the breadboard. This is your **Common Ground**.
 3. Connect the **3V3** pin of the ESP32 to the red/positive **(+) power rail** on one side (3.3V Rail).
 4. Connect the **VIN** pin (5V from USB) to a separate rail for components that need 5V (like the Relay Module).
+
 > ⚠️ **Golden Rule:** Every sensor, actuator, power supply, and ESP32 must connect to the **same GND rail**. Without a common ground, voltage signals float unpredictably!
 
 ---
 
 #### 2. Photodiode Sensor Module & Laser Chamber (GPIO 35 & GPIO 27)
+
 1. **Photodiode Board (BPW34 + LM358 Op-Amp)**:
    - **VCC** ➔ Connect to **3V3** rail.
    - **GND** ➔ Connect to **GND** rail.
@@ -158,6 +162,7 @@ Common Breadboard 3.3V <=========| 3V3                         |
 ---
 
 #### 3. Turbidity Sensor (GPIO 34)
+
 1. Plug the probe cable into the turbidity adapter circuit board.
 2. Ensure the toggle switch on the adapter board is set to **A** (Analog output), not D (Digital).
 3. Connect the adapter board pins:
@@ -169,7 +174,9 @@ Common Breadboard 3.3V <=========| 3V3                         |
 ---
 
 #### 4. DS18B20 Waterproof Temperature Sensor (GPIO 4)
+
 The DS18B20 digital sensor uses a 1-Wire communication protocol.
+
 1. Identify the 3 wires:
    - **Red Wire** = VDD (Power)
    - **Black Wire** = GND (Ground)
@@ -181,11 +188,12 @@ The DS18B20 digital sensor uses a 1-Wire communication protocol.
 3. **Install the 4.7kΩ Pull-Up Resistor**:
    - Insert one leg of the **4.7kΩ resistor** into the breadboard row with the **Yellow Data wire (GPIO 4)**.
    - Insert the other leg into the breadboard row with the **3.3V Power Rail**.
-   *(Without this resistor, the sensor cannot pull the signal line high, and the ESP32 will read -127°C or fail).*
+     *(Without this resistor, the sensor cannot pull the signal line high, and the ESP32 will read -127°C or fail).*
 
 ---
 
 #### 5. 5V Relay Module & 12V Peristaltic Pump (GPIO 26)
+
 1. **Low-Voltage Signal Side (3 Pins)**:
    - **VCC** ➔ Connect to **VIN (5V)** on the ESP32 (relay electromagnets need 5V).
    - **GND** ➔ Connect to **GND** rail.
@@ -206,6 +214,7 @@ Follow these steps on your Windows PC or laptop:
 ---
 
 ### Step 1: Install Node.js LTS
+
 The web dashboard requires Node.js to run its development and production server.
 
 1. Open your browser and go to: **[https://nodejs.org/](https://nodejs.org/)**
@@ -224,6 +233,7 @@ The web dashboard requires Node.js to run its development and production server.
 ---
 
 ### Step 2: Install Arduino IDE 2.x
+
 1. Go to: **[https://www.arduino.cc/en/software](https://www.arduino.cc/en/software)**
 2. Download **Arduino IDE 2.3.x (Windows Win 10 and newer 64-bit)**.
 3. Run the installer and finish setup.
@@ -231,6 +241,7 @@ The web dashboard requires Node.js to run its development and production server.
 ---
 
 ### Step 3: Install USB Drivers (CP2102 / CH340)
+
 ESP32 boards communicate with your PC via a USB-to-UART chip.
 
 1. Connect your ESP32 board to your PC using a **Micro-USB or USB-C Data Cable** (make sure it is a data cable, not a charging-only cable).
@@ -245,12 +256,14 @@ ESP32 boards communicate with your PC via a USB-to-UART chip.
 ---
 
 ### Step 4: Install ESP32 Board Core in Arduino IDE
+
 1. Open **Arduino IDE**.
 2. Click **File** ➔ **Preferences** (or press `Ctrl + Comma`).
 3. In the field **Additional boards manager URLs**, paste:
    ```text
    https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
    ```
+
    *(If you already have another URL in this box, separate them with a comma `,`).*
 4. Click **OK**.
 5. Click the **Boards Manager** icon on the left sidebar (icon with circuit board).
@@ -260,11 +273,12 @@ ESP32 boards communicate with your PC via a USB-to-UART chip.
 ---
 
 ### Step 5: Install Required Arduino WebSockets Library
+
 1. In Arduino IDE, click the **Library Manager** icon on the left sidebar (icon with books, or press `Ctrl + Shift + I`).
 2. In the search bar, type: `WebSockets`
 3. Scroll and find **WebSockets by Markus Sattler**.
 4. Click **Install**.
-*(Note: No other external libraries are required! All 8 DSA structures and the DS18B20 OneWire bit-bang driver are written in pure C++ inside the project).*
+   *(Note: No other external libraries are required! All 8 DSA structures and the DS18B20 OneWire bit-bang driver are written in pure C++ inside the project).*
 
 ---
 
@@ -279,6 +293,7 @@ Before uploading code, your **Laptop** and the **ESP32** must be connected to th
 Choose one of the following methods:
 
 #### 📱 Option A: Mobile Phone Hotspot (Strongly Recommended for College & Demos)
+
 Your smartphone creates a portable WiFi network. Both your laptop and the ESP32 connect as clients to your phone's hotspot.
 
 ```text
@@ -301,17 +316,19 @@ Your smartphone creates a portable WiFi network. Both your laptop and the ESP32 
 ```
 
 * **Why this is the best choice:**
+
   * **Bypasses College Firewalls:** College/hostel WiFi networks have *Access Point (Client) Isolation* enabled, which prevents two devices on the same WiFi from communicating with each other. A phone hotspot has zero isolation.
   * **No Captive Portal:** College WiFi requires browser login/passwords that an ESP32 cannot handle. Phone hotspots use standard WPA2-PSK passwords.
   * **Completely Portable:** Works anywhere — in a classroom, project lab, or during an external examiner evaluation.
-
 * **Critical Phone Settings (Must be 2.4 GHz):**
+
   * **Android:** Go to *Settings ➔ Portable Hotspot / Tethering*. Under *Hotspot Settings*, change **AP Band** from 5.0 GHz to **`2.4 GHz band`**. (ESP32 hardware does not support 5 GHz WiFi).
   * **iPhone:** Go to *Settings ➔ Personal Hotspot*. Turn **ON** the switch labeled **`Maximize Compatibility`** (this forces the iPhone to broadcast on 2.4 GHz instead of 5 GHz).
 
 ---
 
 #### 💻 Option B: Windows Laptop Mobile Hotspot (No Phone Required)
+
 Your Windows laptop broadcasts its own WiFi network using its built-in WiFi card, and the ESP32 connects directly to your laptop.
 
 ```text
@@ -341,11 +358,13 @@ Your Windows laptop broadcasts its own WiFi network using its built-in WiFi card
 ---
 
 #### 🏠 Option C: Home WiFi Router
+
 If you are working from home, both your laptop and the ESP32 can simply connect to your regular home WiFi router. Ensure you select the **2.4 GHz SSID** if your router broadcasts separate 2.4 GHz and 5 GHz bands.
 
 ---
 
 ### Step 2: Configure WiFi Credentials in Firmware
+
 1. In Arduino IDE, open:
    `d:\kirti_project\MicroplasticDetectorESP32_WiFi\MicroplasticDetectorESP32_WiFi.ino`
 2. Scroll to lines 36–37:
@@ -371,6 +390,7 @@ If you are working from home, both your laptop and the ESP32 can simply connect 
 ---
 
 ### Step 3: Arduino IDE Board & Port Configuration
+
 1. In the top toolbar, open the **Tools** menu:
    - **Board** ➔ **esp32** ➔ Select **ESP32 Dev Module** (or *NodeMCU-32S* / *DOIT ESP32 DEVKIT V1*).
    - **Port** ➔ Select your ESP32's COM port (e.g. `COM3` or `COM5`).
@@ -379,6 +399,7 @@ If you are working from home, both your laptop and the ESP32 can simply connect 
 ---
 
 ### Step 4: Upload Sketch (The Boot Button Trick)
+
 1. Click the **Upload** arrow button (`->`) in the top left toolbar (or press `Ctrl + U`).
 2. Arduino IDE will compile the code. When the console displays:
    ```text
@@ -400,6 +421,7 @@ If you are working from home, both your laptop and the ESP32 can simply connect 
 You need the ESP32's assigned IP address to connect the web dashboard. You can find it in two ways:
 
 #### Method A: Using Arduino IDE Serial Monitor (Standard)
+
 1. Click the **Serial Monitor** icon in the top right corner of Arduino IDE (or press `Ctrl + Shift + M`).
 2. Set the baud rate dropdown to **115200 baud** and line ending to **Newline**.
 3. Press the physical **EN** (or **RST**) button on your ESP32 board once to restart it.
@@ -417,6 +439,7 @@ You need the ESP32's assigned IP address to connect the web dashboard. You can f
 5. 📝 **Note down the ESP32 IP Address** (e.g., `192.168.43.105`).
 
 #### Method B: Checking Hotspot Connected Devices (Without Serial Monitor)
+
 * **On Phone Hotspot:** Open *Settings ➔ Portable Hotspot ➔ Connected Devices*. You will see `espressif` or an unknown device listed along with its IP address (e.g., `192.168.43.105` on Android or `172.20.10.x` on iPhone).
 * **On Windows Hotspot:** Open *Settings ➔ Network & Internet ➔ Mobile Hotspot*. Under *Devices connected*, the ESP32's IP (`192.168.137.xxx`) is displayed directly on the screen!
 
@@ -427,6 +450,7 @@ You need the ESP32's assigned IP address to connect the web dashboard. You can f
 ---
 
 ### Step 1: Install Dashboard Dependencies (`npm install`)
+
 *(Only needed the very first time you set up the project on your machine)*
 
 1. Open PowerShell or Command Prompt.
@@ -443,11 +467,11 @@ You need the ESP32's assigned IP address to connect the web dashboard. You can f
 ---
 
 ### Step 2: Launching Real Hardware Mode (Port 3001)
+
 Use this mode when connecting to your physical ESP32.
 
-- **Option A (One-click script):**  
-  Double-click `d:\kirti_project\dashboard\start_real.bat`.
-- **Option B (Terminal command):**  
+- **Option A (One-click script):**Double-click `d:\kirti_project\dashboard\start_real.bat`.
+- **Option B (Terminal command):**
   ```cmd
   cd d:\kirti_project\dashboard
   npm run real
@@ -457,11 +481,11 @@ Use this mode when connecting to your physical ESP32.
 ---
 
 ### Step 3: Launching Demo Simulation Mode (Port 3000)
+
 Use this mode if you do not have hardware plugged in and want to test or practice with pure software simulation.
 
-- **Option A (One-click script):**  
-  Double-click `d:\kirti_project\dashboard\start_demo.bat`.
-- **Option B (Terminal command):**  
+- **Option A (One-click script):**Double-click `d:\kirti_project\dashboard\start_demo.bat`.
+- **Option B (Terminal command):**
   ```cmd
   cd d:\kirti_project\dashboard
   npm run demo
@@ -471,7 +495,9 @@ Use this mode if you do not have hardware plugged in and want to test or practic
 ---
 
 ### Step 4: Stopping Dashboard Servers (`stop_servers.bat`)
+
 When you are done testing or want to free up ports 3000/3001:
+
 - Double-click `d:\kirti_project\dashboard\stop_servers.bat`.
 - This safely stops all background Node.js processes.
 
@@ -504,7 +530,7 @@ When you are done testing or want to free up ports 3000/3001:
    | [ 192.168.1.45       ] [Disconnect]|
    +------------------------------------+
    ```
-8. **Real-Time Data Streams In:**  
+8. **Real-Time Data Streams In:**
    The photodiode voltage graph, temperature dial, turbidity readout, and all 8 DSA pages will now stream live data directly from the physical ESP32!
 
 ---
@@ -512,22 +538,23 @@ When you are done testing or want to free up ports 3000/3001:
 ### Understanding the IP Address & Port `:81`
 
 When you type an IP address like `192.168.1.45` into the input box:
+
 - **`192.168.1.45` is the IP Address** (which device on your home network to speak with).
 - **`:81` is the Port Number** (the exact channel where the ESP32 WebSocket server is listening).
 
-> **Why you only type the IP:**  
+> **Why you only type the IP:**
 > The dashboard automatically dials port `81` for you (`ws://192.168.1.45:81`). If a connection fails or times out, the error message reports the full target address (`192.168.1.45:81`) to let you know both the IP and the port that was attempted.
 
 ---
 
 ### Visual Connection Status Indicators
 
-| State | Status Text | Icon | Action / Meaning |
-| :--- | :--- | :--- | :--- |
-| **Disconnected** | `Hardware Disconnected` | Red WiFi-Off icon | ESP32 not connected. Ready to enter IP. |
-| **Connecting** | `Connecting...` | Yellow spinning loader | Dialing ESP32 WebSocket server. Buttons disabled. |
-| **Connected** | `Hardware Online` | Green glowing WiFi icon | Live real-time bidirectional telemetry active! |
-| **Error** | `⚠ Connection failed / not found` | Red error box | Timeout after 5s or unreachable IP. Error message displayed. |
+| State                  | Status Text                          | Icon                    | Action / Meaning                                             |
+| :--------------------- | :----------------------------------- | :---------------------- | :----------------------------------------------------------- |
+| **Disconnected** | `Hardware Disconnected`            | Red WiFi-Off icon       | ESP32 not connected. Ready to enter IP.                      |
+| **Connecting**   | `Connecting...`                    | Yellow spinning loader  | Dialing ESP32 WebSocket server. Buttons disabled.            |
+| **Connected**    | `Hardware Online`                  | Green glowing WiFi icon | Live real-time bidirectional telemetry active!               |
+| **Error**        | `⚠ Connection failed / not found` | Red error box           | Timeout after 5s or unreachable IP. Error message displayed. |
 
 ---
 
@@ -553,36 +580,40 @@ Once connected, run this quick check to verify the entire cyber-physical pipelin
 ## ❓ Troubleshooting & Frequently Asked Questions (FAQ)
 
 ### 1. The dashboard says `Could not reach ESP32 at ...:81 — check IP and ensure device is powered on`
-- **Cause 1 (Different Networks):** Your laptop is on 5 GHz WiFi, while the ESP32 is connected to 2.4 GHz or a phone hotspot.  
-  *Fix:* Make sure both your laptop and the ESP32 are connected to the exact same WiFi network name.
-- **Cause 2 (Wrong IP):** The IP address in the router changed upon reconnect.  
-  *Fix:* Open Arduino IDE Serial Monitor, press the **EN** button on the ESP32, and check the newly assigned IP address.
-- **Cause 3 (AP Isolation / Guest Network):** Some college or office WiFi networks prevent devices on the same WiFi from communicating with each other.  
+
+- **Cause 1 (Different Networks):** Your laptop is on 5 GHz WiFi, while the ESP32 is connected to 2.4 GHz or a phone hotspot.*Fix:* Make sure both your laptop and the ESP32 are connected to the exact same WiFi network name.
+- **Cause 2 (Wrong IP):** The IP address in the router changed upon reconnect.*Fix:* Open Arduino IDE Serial Monitor, press the **EN** button on the ESP32, and check the newly assigned IP address.
+- **Cause 3 (AP Isolation / Guest Network):** Some college or office WiFi networks prevent devices on the same WiFi from communicating with each other.
   *Fix:* Use your smartphone's **Mobile Hotspot** (configured for 2.4 GHz band). Connect both laptop and ESP32 to your hotspot.
 
 ---
 
 ### 2. Arduino IDE says `Connecting........_____....._____..... Failed to connect to ESP32`
+
 - **Fix:** When `Connecting........` starts appearing in the bottom console, **press and hold the physical `BOOT` button** on your ESP32 board until the percentage counter begins uploading.
 
 ---
 
 ### 3. Serial Monitor outputs unreadable garbage characters
+
 - **Fix:** Change the baud rate dropdown in the bottom-right corner of the Serial Monitor to **`115200 baud`**, then press the **EN** reset button on the ESP32.
 
 ---
 
 ### 4. DS18B20 Temperature sensor reads `-127.0°C`
+
 - **Fix:** The 4.7kΩ pull-up resistor between the Data wire (GPIO 4) and 3.3V is missing or loose. Re-seat the resistor on the breadboard.
 
 ---
 
 ### 5. `Port 3000 or 3001 is already in use` error when running the dashboard
+
 - **Fix:** Double-click `d:\kirti_project\dashboard\stop_servers.bat` to terminate any previous background Node.js instances, then re-launch `start_real.bat`.
 
 ---
 
 ### 6. Can I demonstrate this project without the physical hardware?
+
 - **Yes!** Double-click `d:\kirti_project\dashboard\start_demo.bat` to launch **Demo Mode** on `http://localhost:3000`. The entire optical physics model and all 8 DSA algorithms will simulate in the browser with no ESP32 or sensors required.
 
 ---

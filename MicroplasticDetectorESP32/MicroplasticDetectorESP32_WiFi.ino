@@ -331,7 +331,7 @@ PumpController    pumpController;
 // ============================================================
 //  WEBSOCKET: Broadcast JSON to all connected clients
 // ============================================================
-void wsBroadcast(const String& json) {
+void wsBroadcast(String json) {
     webSocket.broadcastTXT(json);
 }
 

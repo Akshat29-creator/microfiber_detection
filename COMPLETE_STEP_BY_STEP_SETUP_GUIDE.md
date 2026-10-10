@@ -205,6 +205,8 @@ The DS18B20 digital sensor uses a 1-Wire communication protocol.
    - Connect the **(-) Black wire** of the pump directly to the **(-) negative wire** of your 12V adapter and the breadboard **GND**.
 3. *How it works:* When GPIO 26 is set to `HIGH`, the relay clicks on, bridging `COM` to `NO`, completing the 12V circuit and running the pump!
 
+e proat
+
 ---
 
 ## 💻 PC Software Installation (From Zero)
@@ -260,6 +262,7 @@ ESP32 boards communicate with your PC via a USB-to-UART chip.
 1. Open **Arduino IDE**.
 2. Click **File** ➔ **Preferences** (or press `Ctrl + Comma`).
 3. In the field **Additional boards manager URLs**, paste:
+
    ```text
    https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
    ```

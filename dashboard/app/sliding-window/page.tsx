@@ -1,339 +1,315 @@
 'use client';
 import { useWS } from '@/context/WebSocketContext';
-import { Plus, RotateCcw, Circle, Activity, TrendingDown, TrendingUp, Sliders, ShieldCheck } from 'lucide-react';
+import { Plus, RefreshCw, Activity, Layers, CheckCircle2, AlertTriangle, CircleDot } from 'lucide-react';
 import { useState } from 'react';
 import {
-  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, ReferenceLine
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ReferenceLine,
+  Legend
 } from 'recharts';
 
 export default function SlidingWindowPage() {
-  const { circularBuffer, sendCommand, connected, mode, demoSlidingWindowAdd } = useWS();
-  const [localSlots, setLocalSlots] = useState<{ v: number; ts: number }[]>([]);
-  const capacity = 10;
-  const [writePos, setWritePos] = useState(0);
+  const {
+    circularBuffer,
+    sensorLog,
+    sendCommand,
+    mode,
+    connected,
+    demoSlidingWindowAdd,
+  } = useWS();
 
-  const slots = connected ? circularBuffer.slots.map((s) => ({ v: s.voltage, ts: s.timestamp })) : localSlots;
-  const used = connected ? circularBuffer.used : localSlots.length;
-  const avg = slots.length > 0 ? slots.reduce((s, sl) => s + sl.v, 0) / slots.length : 0;
-  const minV = slots.length > 0 ? Math.min(...slots.map((s) => s.v)) : 0;
-  const maxV = slots.length > 0 ? Math.max(...slots.map((s) => s.v)) : 0;
+  const [inputVal, setInputVal] = useState('2.95');
 
-  const addReading = () => {
-    const v = +(2.6 + Math.random() * 0.5).toFixed(3);
+  const { slots, used, avg } = circularBuffer;
+  const filledSlots = slots.slice(0, used);
+  const min = filledSlots.length > 0 ? Math.min(...filledSlots.map(s => s.voltage)) : 0;
+  const max = filledSlots.length > 0 ? Math.max(...filledSlots.map(s => s.voltage)) : 0;
+  const movingAvg = avg;
+
+  const addVal = () => {
+    const v = parseFloat(inputVal) || 2.92;
     if (mode === 'real' && connected) {
       sendCommand({ cmd: 'slidingWindow', action: 'add', voltage: v });
-    } else if (mode === 'demo') {
-      demoSlidingWindowAdd(v);
     } else {
-      const ts = Date.now() / 1000;
-      setLocalSlots((prev) => {
-        if (prev.length < capacity) return [...prev, { v, ts }];
-        const next = [...prev];
-        next[writePos] = { v, ts };
-        setWritePos((writePos + 1) % capacity);
-        return next;
-      });
+      demoSlidingWindowAdd(v);
     }
   };
 
-  const fillAll = () => {
-    if (mode === 'demo') {
-      for (let i = 0; i < capacity; i++) {
-        demoSlidingWindowAdd(+(2.7 + Math.random() * 0.4).toFixed(3));
-      }
+  const fillWindow = () => {
+    if (mode === 'real' && connected) {
+      sendCommand({ cmd: 'slidingWindow', action: 'fill' });
     } else {
-      const demo = Array.from({ length: capacity }, (_, i) => ({
-        v: +(2.7 + Math.random() * 0.4).toFixed(3),
-        ts: +(i * 0.3).toFixed(1),
-      }));
-      setLocalSlots(demo);
-      setWritePos(0);
+      const sampleVoltages = [
+        +(2.98 + (Math.random() - 0.5) * 0.05).toFixed(2),
+        +(3.02 + (Math.random() - 0.5) * 0.05).toFixed(2),
+        +(2.38 + Math.random() * 0.08).toFixed(2), // Contaminant optical drop below 2.50V
+        +(3.00 + (Math.random() - 0.5) * 0.05).toFixed(2),
+        +(3.05 + (Math.random() - 0.5) * 0.05).toFixed(2),
+        +(2.99 + (Math.random() - 0.5) * 0.05).toFixed(2),
+        +(3.02 + (Math.random() - 0.5) * 0.05).toFixed(2),
+        +(2.78 + (Math.random() - 0.5) * 0.05).toFixed(2),
+        +(2.98 + (Math.random() - 0.5) * 0.05).toFixed(2),
+        +(3.03 + (Math.random() - 0.5) * 0.05).toFixed(2),
+      ];
+      sampleVoltages.forEach(v => demoSlidingWindowAdd(v));
     }
   };
+
+  const isContaminated = movingAvg < 2.50 && movingAvg > 0;
+
+  // Source all chronological optical readings:
+  // Use sensorLog if available, otherwise fall back to circular buffer slots
+  const opticalReadings = (sensorLog && sensorLog.length > 0)
+    ? sensorLog.filter(r => r.sensorType !== 'TURBIDITY')
+    : filledSlots;
+  const activeReadings = opticalReadings.length > 0 ? opticalReadings : filledSlots;
+
+  // For real-time display, show the most recent 20 readings for a rolling oscilloscope view
+  const displayWindowSize = 20;
+  const startIndex = Math.max(0, activeReadings.length - displayWindowSize);
+  const visibleReadings = activeReadings.slice(startIndex);
+
+  // Compute raw voltage and the exact 10-slot circular buffer moving average at each point
+  const waveformData = visibleReadings.map((reading, idx) => {
+    const globalIdx = startIndex + idx;
+    // 10-slot sliding window slice ending at this sample
+    const windowSlice = activeReadings.slice(Math.max(0, globalIdx - 9), globalIdx + 1);
+    const windowAvg = windowSlice.length > 0
+      ? windowSlice.reduce((sum, r) => sum + r.voltage, 0) / windowSlice.length
+      : reading.voltage;
+
+    const timeLabel = typeof reading.timestamp === 'number' && reading.timestamp > 0
+      ? `${reading.timestamp.toFixed(1)}s`
+      : `#${globalIdx + 1}`;
+
+    return {
+      t: timeLabel,
+      raw: +reading.voltage.toFixed(3),
+      filtered: +windowAvg.toFixed(3),
+    };
+  });
+
+  // Dynamic YAxis domain to keep waveform and 2.50V threshold clearly in view
+  const allVoltages = waveformData.flatMap(d => [d.raw, d.filtered]);
+  const minVoltage = allVoltages.length > 0 ? Math.min(...allVoltages) : 2.2;
+  const maxVoltage = allVoltages.length > 0 ? Math.max(...allVoltages) : 3.2;
+  const yDomainMin = Math.max(0, +(Math.min(minVoltage, 2.3) - 0.2).toFixed(1));
+  const yDomainMax = +(Math.max(maxVoltage, 3.2) + 0.2).toFixed(1);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Header */}
-      <div>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-          Sliding Window (Circular Linked List)
-        </h1>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-          Fixed 10-slot circular ring buffer computing a continuous moving average to filter optical photodiode noise
-        </p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+            Sliding Window
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
+            10-sample rolling window for real-time sensor smoothing and optical noise filtering
+          </p>
+        </div>
+        <span className={`badge ${mode === 'real' ? (connected ? 'badge-green' : 'badge-red') : 'badge-cyan'}`}>
+          {mode === 'real' ? (connected ? 'Hardware Connected' : 'Hardware Offline') : 'Demo Mode Active'}
+        </span>
       </div>
 
-      {/* Operations Card */}
+      {/* 4 Clean Metric Cards */}
+      <div className="metrics-grid">
+        <div className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Window Capacity</span>
+            <Layers size={15} style={{ color: 'var(--accent-cyan)' }} />
+          </div>
+          <div className="metric-val">{used} <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>/ 10</span></div>
+          <span className="metric-badge cyan">{used === 10 ? 'Window Full (Overwriting)' : 'Filling Window'}</span>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Rolling Average</span>
+            <Activity size={15} style={{ color: 'var(--accent-emerald)' }} />
+          </div>
+          <div className="metric-val" style={{ color: isContaminated ? 'var(--accent-rose)' : 'var(--accent-cyan)' }}>
+            {movingAvg.toFixed(2)} <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>V</span>
+          </div>
+          <span className={`metric-badge ${isContaminated ? 'rose' : 'green'}`}>
+            {isContaminated ? 'Contamination Detected' : 'Clean Water Baseline'}
+          </span>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Minimum Level</span>
+            <AlertTriangle size={15} style={{ color: 'var(--accent-rose)' }} />
+          </div>
+          <div className="metric-val">{min > 0 ? `${min.toFixed(2)} V` : '--'}</div>
+          <span className="metric-badge rose">Deepest Occlusion</span>
+        </div>
+
+        <div className="metric-card">
+          <div className="metric-top">
+            <span className="metric-label">Maximum Level</span>
+            <CheckCircle2 size={15} style={{ color: 'var(--accent-amber)' }} />
+          </div>
+          <div className="metric-val">{max > 0 ? `${max.toFixed(2)} V` : '--'}</div>
+          <span className="metric-badge amber">Peak Clean Baseline</span>
+        </div>
+      </div>
+
+      {/* Window Controls */}
       <div className="card">
         <div className="card-header">
           <div>
-            <div className="card-title">Ring Buffer Operations</div>
-            <div className="card-subtitle">Push readings with O(1) overwrite when buffer is saturated</div>
+            <div className="card-title">Rolling Window Controls</div>
+            <div className="card-subtitle">Push voltage readings into the 10-slot circular buffer</div>
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-          <button className="btn btn-primary" onClick={addReading}>
-            <Plus size={14} /> Insert Reading
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Sample Voltage:</span>
+            <input
+              className="input"
+              style={{ width: 110 }}
+              value={inputVal}
+              onChange={(e) => setInputVal(e.target.value)}
+              placeholder="e.g. 2.95"
+            />
+          </div>
+
+          <button className="btn btn-primary" onClick={addVal}>
+            <Plus size={14} /> Add Sample
           </button>
-          <button className="btn btn-secondary" onClick={fillAll}>
-            <RotateCcw size={14} /> Fill All 10 Slots
+
+          <button className="btn btn-secondary" onClick={() => { setInputVal('2.20'); }}>
+            Set Contaminant (2.20V)
           </button>
-          <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' }}>
-            Capacity: <strong>10 slots</strong> • Used: <strong>{used} slots</strong>
-          </span>
+          <button className="btn btn-secondary" onClick={() => { setInputVal('2.95'); }}>
+            Set Clean (2.95V)
+          </button>
+
+          <button className="btn btn-secondary" onClick={fillWindow} style={{ marginLeft: 'auto' }}>
+            <RefreshCw size={14} /> Fill 10 Samples
+          </button>
         </div>
       </div>
 
-      {/* Metrics Row */}
-      <div className="metrics-grid">
-        <div className="metric-card">
-          <div className="metric-top">
-            <span className="metric-label">Moving Average</span>
-            <Activity size={15} style={{ color: 'var(--accent-cyan)' }} />
+      {/* Visual 10-Slot Window Card */}
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <div className="card-title">Rolling Buffer Slots (10 Slots)</div>
+            <div className="card-subtitle">Each new sample replaces the oldest slot in continuous circular rotation</div>
           </div>
-          <div className="metric-val">{avg > 0 ? avg.toFixed(3) : '0.000'} <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>V</span></div>
-          <span className="metric-badge cyan">Noise Filtered</span>
+          <span className="badge badge-cyan">{used}/10 slots active</span>
         </div>
 
-        <div className="metric-card">
-          <div className="metric-top">
-            <span className="metric-label">Buffer Sched</span>
-            <Circle size={15} style={{ color: 'var(--accent-emerald)' }} />
-          </div>
-          <div className="metric-val">{used} <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>/ 10</span></div>
-          <span className={`metric-badge ${used === 10 ? 'green' : 'amber'}`}>
-            {used === 10 ? 'Saturated (Ring Overwrite)' : 'Filling'}
-          </span>
-        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: 10, marginTop: 4 }}>
+          {Array.from({ length: 10 }).map((_, idx) => {
+            const isFilled = idx < used;
+            const slotData = slots[idx];
+            const isOccluded = isFilled && slotData?.voltage < 2.50;
 
-        <div className="metric-card">
-          <div className="metric-top">
-            <span className="metric-label">Minimum Voltage</span>
-            <TrendingDown size={15} style={{ color: 'var(--accent-rose)' }} />
-          </div>
-          <div className="metric-val">{minV > 0 ? minV.toFixed(3) : '0.000'} <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>V</span></div>
-          <span className="metric-badge rose">Peak Attenuation</span>
-        </div>
-
-        <div className="metric-card">
-          <div className="metric-top">
-            <span className="metric-label">Maximum Voltage</span>
-            <TrendingUp size={15} style={{ color: 'var(--accent-blue)' }} />
-          </div>
-          <div className="metric-val">{maxV > 0 ? maxV.toFixed(3) : '0.000'} <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>V</span></div>
-          <span className="metric-badge cyan">Peak Transmission</span>
-        </div>
-      </div>
-
-      {/* 2-Column Section: SVG Ring + Slots Table */}
-      <div className="dashboard-columns">
-        {/* Left: Circular Ring Visualizer */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 340 }}>
-          <div style={{ width: '100%', marginBottom: 12 }}>
-            <div className="card-title">Circular Ring Visualization</div>
-            <div className="card-subtitle">Slot 9 tail points back to Slot 0 head</div>
-          </div>
-
-          <div style={{ position: 'relative', width: 280, height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {/* Center Moving Average Display */}
-            <div style={{ textAlign: 'center', zIndex: 10 }}>
-              <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Moving Avg</div>
-              <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: 'var(--accent-cyan)' }}>
-                {avg > 0 ? avg.toFixed(3) : '0.000'} V
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{used} / 10 slots</div>
-            </div>
-
-            {/* SVG Connecting Ring */}
-            <svg width="280" height="280" style={{ position: 'absolute', top: 0, left: 0 }}>
-              <circle cx="140" cy="140" r="100" fill="none" stroke="rgba(255, 255, 255, 0.06)" strokeWidth="3" strokeDasharray="4 4" />
-            </svg>
-
-            {/* 10 Circular Slots */}
-            {Array.from({ length: 10 }).map((_, idx) => {
-              const angle = (idx * 36 - 90) * (Math.PI / 180);
-              const r = 100;
-              const x = 140 + r * Math.cos(angle);
-              const y = 140 + r * Math.sin(angle);
-              const slotData = slots[idx];
-              const isFilled = idx < used;
-
-              return (
-                <div
-                  key={idx}
-                  style={{
-                    position: 'absolute',
-                    left: x,
-                    top: y,
-                    transform: 'translate(-50%, -50%)',
-                    width: 44,
-                    height: 44,
-                    borderRadius: '50%',
-                    background: isFilled
-                      ? slotData?.v < 2.50
-                        ? 'rgba(244, 63, 94, 0.2)'
-                        : 'rgba(6, 182, 212, 0.2)'
-                      : 'rgba(255, 255, 255, 0.03)',
-                    border: `2px solid ${
-                      isFilled
-                        ? slotData?.v < 2.50
-                          ? 'var(--accent-rose)'
-                          : 'var(--accent-cyan)'
-                        : 'rgba(255, 255, 255, 0.1)'
-                    }`,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 9,
-                    color: isFilled ? 'var(--text-primary)' : 'var(--text-muted)',
-                  }}
-                >
-                  <span style={{ fontSize: 9, fontWeight: 700, opacity: 0.6 }}>#{idx}</span>
-                  <span style={{ fontSize: 10, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>
-                    {isFilled ? `${slotData.v.toFixed(1)}V` : '--'}
-                  </span>
+            return (
+              <div
+                key={idx}
+                style={{
+                  padding: '14px 10px',
+                  borderRadius: 'var(--radius)',
+                  background: isFilled
+                    ? isOccluded
+                      ? 'rgba(244, 63, 94, 0.12)'
+                      : 'rgba(6, 182, 212, 0.08)'
+                    : 'rgba(255, 255, 255, 0.02)',
+                  border: `1px solid ${
+                    isFilled
+                      ? isOccluded
+                        ? 'rgba(244, 63, 94, 0.45)'
+                        : 'rgba(6, 182, 212, 0.4)'
+                      : 'var(--border-color)'
+                  }`,
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 4,
+                  alignItems: 'center',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: 'var(--text-muted)' }}>
+                  <CircleDot size={10} style={{ color: isFilled ? (isOccluded ? 'var(--accent-rose)' : 'var(--accent-cyan)') : 'var(--text-dim)' }} />
+                  <span>Slot #{idx + 1}</span>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right: Slot Data Records */}
-        <div className="card">
-          <div className="card-header">
-            <div>
-              <div className="card-title">Slot Memory Map</div>
-              <div className="card-subtitle">Array-backed circular buffer indexes</div>
-            </div>
-          </div>
-
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Slot</th>
-                <th>Voltage</th>
-                <th>Status</th>
-                <th>Pointer Relation</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: 10 }).map((_, idx) => {
-                const s = slots[idx];
-                const isFilled = idx < used;
-                return (
-                  <tr key={idx}>
-                    <td style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>Slot [{idx}]</td>
-                    <td style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: isFilled ? (s.v < 2.5 ? 'var(--accent-rose)' : 'var(--text-primary)') : 'var(--text-muted)' }}>
-                      {isFilled ? `${s.v.toFixed(3)} V` : 'Empty'}
-                    </td>
-                    <td>
-                      <span className={`badge ${isFilled ? (s.v < 2.5 ? 'badge-red' : 'badge-green') : 'badge-yellow'}`}>
-                        {isFilled ? (s.v < 2.5 ? 'OCCLUDED' : 'CLEAR') : 'AVAILABLE'}
-                      </span>
-                    </td>
-                    <td style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                      {idx === 9 ? 'Circular → points to Slot [0]' : `points to Slot [${idx + 1}]`}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                <div style={{ fontSize: 15, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: isFilled ? (isOccluded ? 'var(--accent-rose)' : 'var(--text-primary)') : 'var(--text-muted)' }}>
+                  {isFilled && slotData ? `${slotData.voltage.toFixed(2)}V` : '--'}
+                </div>
+                <span className={`badge ${isFilled ? (isOccluded ? 'badge-red' : 'badge-green') : 'badge-yellow'}`} style={{ fontSize: 9 }}>
+                  {isFilled ? (isOccluded ? 'DROP' : 'CLEAR') : 'EMPTY'}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Raw Noisy ADC vs 10-Slot Moving Average Filtered Signal */}
+      {/* Signal Smoothing Waveform Chart */}
       <div className="card">
         <div className="card-header">
           <div>
-            <div className="card-title">Hardware Noise Suppression: Raw ADC vs Moving Average Filter</div>
-            <div className="card-subtitle">Real-time filtering demonstrating how the circular linked list mitigates optical sensor flutter</div>
-          </div>
-          <span className="badge badge-cyan">Low-Pass Filter</span>
-        </div>
-
-        <div style={{ width: '100%', height: 240, marginTop: 10 }}>
-          <ResponsiveContainer>
-            <LineChart
-              data={Array.from({ length: 16 }, (_, i) => {
-                const raw = +(2.98 + Math.sin(i * 0.8) * 0.12 + (i === 7 ? -0.72 : (i % 2 === 0 ? 0.09 : -0.08))).toFixed(3);
-                const filtered = +(2.98 + Math.sin(i * 0.8) * 0.06 + (i === 7 ? -0.38 : 0)).toFixed(3);
-                return {
-                  t: `${(i * 0.1).toFixed(1)}s`,
-                  raw,
-                  filtered,
-                };
-              })}
-            >
-              <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
-              <XAxis dataKey="t" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} />
-              <YAxis domain={[2.0, 3.4]} tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} unit="V" />
-              <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, fontSize: 12 }} />
-              <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />
-              <ReferenceLine y={2.50} stroke="#f43f5e" strokeDasharray="4 4" label={{ value: '2.50V Threshold', fill: '#f43f5e', fontSize: 10 }} />
-              <Line type="monotone" dataKey="raw" stroke="#f59e0b" strokeWidth={1.5} dot={{ r: 2 }} name="Raw Noisy ADC (Photodiode Flutter)" />
-              <Line type="monotone" dataKey="filtered" stroke="#06b6d4" strokeWidth={2.5} dot={{ r: 3 }} name="10-Slot Moving Average (CLL Filtered)" />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Embedded C++ Circular Buffer Architecture */}
-      <div className="card">
-        <div className="card-header">
-          <div>
-            <div className="card-title">Circular Linked List Microcontroller Architecture</div>
-            <div className="card-subtitle">Constant-time O(1) buffer overwrite mechanics without array reallocation</div>
-          </div>
-          <span className="badge badge-purple">Zero-Reallocation Ring</span>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
-          <div style={{ padding: 12, borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-cyan)', marginBottom: 6 }}>C++ RING BUFFER STRUCT</div>
-            <pre style={{ margin: 0, fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-{`class CircularWindow {
-  SensorReading slots[10];
-  int head = 0;
-  int count = 0;
-  double sum = 0.0;
-  // O(1) Moving Average:
-  // sum = sum - old + new;
-};`}
-            </pre>
-          </div>
-
-          <div style={{ padding: 12, borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-emerald)', marginBottom: 6 }}>ALGORITHMIC GUARANTEE</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, fontSize: 12 }}>
-              <div>
-                <span style={{ color: 'var(--text-muted)' }}>Insertion:</span>
-                <strong style={{ display: 'block', color: 'var(--accent-emerald)', fontFamily: "'JetBrains Mono', monospace" }}>O(1) Constant</strong>
-              </div>
-              <div>
-                <span style={{ color: 'var(--text-muted)' }}>Moving Avg:</span>
-                <strong style={{ display: 'block', color: 'var(--accent-emerald)', fontFamily: "'JetBrains Mono', monospace" }}>O(1) Running Sum</strong>
-              </div>
-              <div>
-                <span style={{ color: 'var(--text-muted)' }}>Memory:</span>
-                <strong style={{ display: 'block', color: 'var(--accent-purple)', fontFamily: "'JetBrains Mono', monospace" }}>Static (Zero Malloc)</strong>
-              </div>
-              <div>
-                <span style={{ color: 'var(--text-muted)' }}>Ring Wrap:</span>
-                <strong style={{ display: 'block', color: 'var(--accent-cyan)', fontFamily: "'JetBrains Mono', monospace" }}>idx = (idx+1)%10</strong>
-              </div>
+            <div className="card-title">Live Noise Suppression Waveform</div>
+            <div className="card-subtitle">
+              Real-time plot of actual sensor voltage vs 10-slot circular buffer moving average
             </div>
           </div>
-
-          <div style={{ padding: 12, borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent-amber)', marginBottom: 6 }}>WHY EMBEDDED C++ USES CLL</div>
-            <p style={{ margin: 0, fontSize: 11, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-              In real-time firmware, computing a moving average by summing 10 elements takes $O(k)$ time. By maintaining a running sum and overwriting the circular buffer in $O(1)$, the ESP32 samples at 100Hz with zero CPU lag.
-            </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span className="badge badge-cyan">{waveformData.length} Active Points</span>
+            <span className="badge badge-green">Noise Filter Active</span>
           </div>
         </div>
+
+        {waveformData.length === 0 ? (
+          <div style={{
+            height: 260,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 12,
+            color: 'var(--text-muted)',
+            border: '1px dashed var(--border-color)',
+            borderRadius: 'var(--radius)',
+            marginTop: 10,
+          }}>
+            <Activity size={28} style={{ color: 'var(--accent-cyan)', opacity: 0.7 }} />
+            <div style={{ fontSize: 13, textAlign: 'center' }}>
+              No sensor telemetry recorded yet.<br />
+              Add a sample or click below to populate the window and view the live waveform.
+            </div>
+            <button className="btn btn-secondary" onClick={fillWindow}>
+              <RefreshCw size={14} /> Populate 10 Samples
+            </button>
+          </div>
+        ) : (
+          <div style={{ width: '100%', height: 260, marginTop: 10 }}>
+            <ResponsiveContainer>
+              <LineChart data={waveformData}>
+                <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
+                <XAxis dataKey="t" tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} />
+                <YAxis domain={[yDomainMin, yDomainMax]} tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} unit="V" />
+                <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, fontSize: 12 }} />
+                <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />
+                <ReferenceLine y={2.50} stroke="#f43f5e" strokeDasharray="4 4" label={{ value: '2.50V Drop Threshold', fill: '#f43f5e', fontSize: 10 }} />
+                <Line type="monotone" dataKey="raw" stroke="#f59e0b" strokeWidth={1.5} dot={{ r: 3 }} name="Raw Sensor Signal (With Flutter)" isAnimationActive={false} />
+                <Line type="monotone" dataKey="filtered" stroke="#06b6d4" strokeWidth={2.5} dot={{ r: 3 }} name="Sliding Window (Filtered Output)" isAnimationActive={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
     </div>
   );

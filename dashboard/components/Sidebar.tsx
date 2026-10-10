@@ -33,9 +33,7 @@ export default function Sidebar() {
     sensorLog,
     detections,
     circularBuffer,
-    calibrationStack,
     alerts,
-    bstData,
   } = useWS();
 
   const navItems: NavGroup[] = [
@@ -50,19 +48,15 @@ export default function Sidebar() {
     {
       section: 'DATA STRUCTURES',
       items: [
-        { href: '/sensor-log', icon: List, label: 'Sensor Log (SLL)', count: sensorLog.length },
-        { href: '/events', icon: ArrowLeftRight, label: 'Event History (DLL)', count: detections.length },
-        { href: '/sliding-window', icon: Circle, label: 'Sliding Window (CLL)', count: `${circularBuffer.used}/10` },
-        { href: '/calibration', icon: Layers, label: 'Calibration (Stack)', count: calibrationStack.length },
+        { href: '/sensor-log', icon: List, label: 'Sensor Log', count: sensorLog.length },
+        { href: '/sliding-window', icon: Circle, label: 'Sliding Window', count: `${circularBuffer.used}/10` },
         { href: '/alerts', icon: Bell, label: 'Alert Queue', count: alerts.length },
-        { href: '/bst', icon: GitBranch, label: 'Detection Tree (BST)', count: bstData.size },
       ],
     },
     {
       section: 'ALGORITHMS',
       items: [
         { href: '/sorting', icon: ArrowUpDown, label: 'Sorting Algorithms', count: 5 },
-        { href: '/searching', icon: Search, label: 'Searching Algorithms', count: 2 },
       ],
     },
   ];
@@ -164,7 +158,7 @@ export default function Sidebar() {
               <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>Demo Environment</span>
             </div>
             <div style={{ fontSize: 10, color: 'var(--text-muted)', lineHeight: 1.3 }}>
-              Simulated optical stream & 8 C++ DSA modules active
+              Simulated optical stream & core embedded DSA modules active
             </div>
           </div>
         )}

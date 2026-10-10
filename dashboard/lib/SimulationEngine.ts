@@ -1,6 +1,6 @@
 // ============================================================
 //  SimulationEngine.ts
-//  TypeScript port of ALL C++ DSA data structures
+//  TypeScript port of C++ DSA data structures
 //  from MicroplasticDetector/ — runs in the browser for demo mode
 // ============================================================
 
@@ -80,19 +80,30 @@ export class SensorLinkedList {
   deleteFromBeginning(): boolean {
     if (this.head === null) return false;
     this.head = this.head.next;
-    this._size--;
     if (this.head === null) this.tail = null;
+    this._size--;
     return true;
   }
 
   deleteFromEnd(): boolean {
     if (this.head === null) return false;
-    if (this.head === this.tail) {
-      this.head = null; this.tail = null; this._size--; return true;
-    }
+    if (this.head === this.tail) { this.head = null; this.tail = null; this._size = 0; return true; }
     let current = this.head;
     while (current.next !== this.tail) current = current.next!;
-    this.tail = current; this.tail.next = null; this._size--;
+    current.next = null;
+    this.tail = current;
+    this._size--;
+    return true;
+  }
+
+  deleteAtPosition(index: number): boolean {
+    if (index < 0 || index >= this._size || this.head === null) return false;
+    if (index === 0) return this.deleteFromBeginning();
+    if (index === this._size - 1) return this.deleteFromEnd();
+    let current = this.head;
+    for (let i = 0; i < index - 1; i++) current = current.next!;
+    current.next = current.next!.next;
+    this._size--;
     return true;
   }
 
@@ -103,78 +114,15 @@ export class SensorLinkedList {
     return arr;
   }
 
-  countByType(type: string): number {
-    let count = 0; let current = this.head;
-    while (current) { if (current.data.sensorType === type) count++; current = current.next; }
-    return count;
-  }
-
   countValid(): number {
-    let count = 0; let current = this.head;
-    while (current) { if (current.data.valid) count++; current = current.next; }
+    let count = 0;
+    let current = this.head;
+    while (current !== null) { if (current.data.valid) count++; current = current.next; }
     return count;
   }
 
   getSize(): number { return this._size; }
   isEmpty(): boolean { return this.head === null; }
-}
-
-// ============================================================
-//  EventDoublyList — DOUBLY LINKED LIST
-//  DSA: Forward/reverse traversal, O(n) delete by ID
-// ============================================================
-class EventNode {
-  data: MicroplasticEvent;
-  next: EventNode | null = null;
-  prev: EventNode | null = null;
-  constructor(event: MicroplasticEvent) { this.data = event; }
-}
-
-export class EventDoublyList {
-  private head: EventNode | null = null;
-  private tail: EventNode | null = null;
-  private _size: number = 0;
-
-  append(event: MicroplasticEvent): void {
-    const newNode = new EventNode(event);
-    if (this.head === null) { this.head = newNode; this.tail = newNode; }
-    else { newNode.prev = this.tail; this.tail!.next = newNode; this.tail = newNode; }
-    this._size++;
-  }
-
-  deleteByID(id: number): boolean {
-    let current = this.head;
-    while (current) {
-      if (current.data.eventID === id) {
-        if (current.prev) current.prev.next = current.next; else this.head = current.next;
-        if (current.next) current.next.prev = current.prev; else this.tail = current.prev;
-        this._size--;
-        return true;
-      }
-      current = current.next;
-    }
-    return false;
-  }
-
-  forwardTraversal(): MicroplasticEvent[] {
-    const arr: MicroplasticEvent[] = []; let current = this.head;
-    while (current) { arr.push(current.data); current = current.next; }
-    return arr;
-  }
-
-  reverseTraversal(): MicroplasticEvent[] {
-    const arr: MicroplasticEvent[] = []; let current = this.tail;
-    while (current) { arr.push(current.data); current = current.prev; }
-    return arr;
-  }
-
-  countBySeverity(sev: string): number {
-    let count = 0; let c = this.head;
-    while (c) { if (c.data.severity === sev) count++; c = c.next; }
-    return count;
-  }
-
-  getSize(): number { return this._size; }
 }
 
 // ============================================================
@@ -218,19 +166,33 @@ export class CircularBuffer {
   getMovingAverage(): number {
     if (this._size === 0) return 0;
     const slots = this.getSlots();
-    return slots.reduce((s, r) => s + r.voltage, 0) / this._size;
+    return slots.reduce((sum, s) => sum + s.voltage, 0) / this._size;
+  }
+
+  getMin(): number {
+    const slots = this.getSlots();
+    return slots.length === 0 ? 0 : Math.min(...slots.map(s => s.voltage));
+  }
+
+  getMax(): number {
+    const slots = this.getSlots();
+    return slots.length === 0 ? 0 : Math.max(...slots.map(s => s.voltage));
   }
 
   getSize(): number { return this._size; }
   getCapacity(): number { return this.capacity; }
+  isFull(): boolean { return this._size === this.capacity; }
 }
 
 // ============================================================
-//  AlertQueue — QUEUE (FIFO) with Priority Insertion
-//  DSA: Enqueue O(1), Priority insert O(n), Dequeue O(1)
+//  AlertQueue — FIFO QUEUE + PRIORITY QUEUE
+//  DSA: FIFO dequeue, Priority 1 (critical) jumps to front
 // ============================================================
 export interface Alert {
-  type: string; message: string; timestamp: number; priority: number;
+  type: string;
+  message: string;
+  timestamp: number;
+  priority: number; // 1=CRITICAL, 2=ERROR, 3=WARNING, 4=INFO
 }
 
 class QueueNode {
@@ -285,132 +247,6 @@ export class AlertQueue {
 }
 
 // ============================================================
-//  CalibrationStack — STACK (LIFO)
-//  DSA: Push/Pop O(1), Undo operation
-// ============================================================
-export interface CalibrationState {
-  baseline: number; threshold: number; correction: number; timestamp: number; description: string;
-}
-
-class StackNode {
-  data: CalibrationState;
-  next: StackNode | null = null;
-  constructor(state: CalibrationState) { this.data = state; }
-}
-
-export class CalibrationStack {
-  private top: StackNode | null = null;
-  private _size: number = 0;
-
-  push(state: CalibrationState): void {
-    const n = new StackNode(state); n.next = this.top; this.top = n; this._size++;
-  }
-
-  pop(): CalibrationState | null {
-    if (!this.top) return null;
-    const state = this.top.data; this.top = this.top.next; this._size--;
-    return state;
-  }
-
-  peek(): CalibrationState | null { return this.top ? this.top.data : null; }
-
-  undo(): CalibrationState | null {
-    if (this._size < 2) return this.peek();
-    this.pop();
-    return this.peek();
-  }
-
-  toArray(): CalibrationState[] {
-    const arr: CalibrationState[] = []; let c = this.top;
-    while (c) { arr.push(c.data); c = c.next; }
-    return arr;
-  }
-
-  getSize(): number { return this._size; }
-}
-
-// ============================================================
-//  DetectionBST — BINARY SEARCH TREE
-//  DSA: O(log n) insert/search, inorder/preorder/postorder
-// ============================================================
-class BSTNode {
-  data: MicroplasticEvent;
-  left: BSTNode | null = null;
-  right: BSTNode | null = null;
-  constructor(event: MicroplasticEvent) { this.data = event; }
-}
-
-export class DetectionBST {
-  private root: BSTNode | null = null;
-  private _size: number = 0;
-
-  insert(event: MicroplasticEvent): void {
-    this.root = this._insert(this.root, event); this._size++;
-  }
-
-  private _insert(node: BSTNode | null, event: MicroplasticEvent): BSTNode {
-    if (!node) return new BSTNode(event);
-    if (event.timestamp < node.data.timestamp) node.left = this._insert(node.left, event);
-    else node.right = this._insert(node.right, event);
-    return node;
-  }
-
-  search(timestamp: number): MicroplasticEvent | null {
-    return this._search(this.root, timestamp);
-  }
-
-  private _search(node: BSTNode | null, ts: number): MicroplasticEvent | null {
-    if (!node) return null;
-    if (Math.abs(ts - node.data.timestamp) < 0.01) return node.data;
-    if (ts < node.data.timestamp) return this._search(node.left, ts);
-    return this._search(node.right, ts);
-  }
-
-  inorder(): MicroplasticEvent[] {
-    const arr: MicroplasticEvent[] = []; this._inorder(this.root, arr); return arr;
-  }
-  private _inorder(node: BSTNode | null, arr: MicroplasticEvent[]): void {
-    if (!node) return; this._inorder(node.left, arr); arr.push(node.data); this._inorder(node.right, arr);
-  }
-
-  preorder(): MicroplasticEvent[] {
-    const arr: MicroplasticEvent[] = []; this._preorder(this.root, arr); return arr;
-  }
-  private _preorder(node: BSTNode | null, arr: MicroplasticEvent[]): void {
-    if (!node) return; arr.push(node.data); this._preorder(node.left, arr); this._preorder(node.right, arr);
-  }
-
-  postorder(): MicroplasticEvent[] {
-    const arr: MicroplasticEvent[] = []; this._postorder(this.root, arr); return arr;
-  }
-  private _postorder(node: BSTNode | null, arr: MicroplasticEvent[]): void {
-    if (!node) return; this._postorder(node.left, arr); this._postorder(node.right, arr); arr.push(node.data);
-  }
-
-  getHeight(): number { return this._height(this.root); }
-  private _height(node: BSTNode | null): number {
-    if (!node) return -1; return 1 + Math.max(this._height(node.left), this._height(node.right));
-  }
-
-  rangeSearch(start: number, end: number): MicroplasticEvent[] {
-    const arr: MicroplasticEvent[] = []; this._rangeSearch(this.root, start, end, arr); return arr;
-  }
-  private _rangeSearch(node: BSTNode | null, s: number, e: number, arr: MicroplasticEvent[]): void {
-    if (!node) return;
-    if (s < node.data.timestamp) this._rangeSearch(node.left, s, e, arr);
-    if (node.data.timestamp >= s && node.data.timestamp <= e) arr.push(node.data);
-    if (e > node.data.timestamp) this._rangeSearch(node.right, s, e, arr);
-  }
-
-  getSize(): number { return this._size; }
-
-  clear(): void {
-    this.root = null;
-    this._size = 0;
-  }
-}
-
-// ============================================================
 //  Sorting Algorithms — on SensorReading arrays
 // ============================================================
 export function bubbleSort(arr: SensorReading[]): SensorReading[] {
@@ -450,11 +286,12 @@ function mergeSortHelper(a: SensorReading[], l: number, r: number): void {
   if (l >= r) return;
   const m = Math.floor((l + r) / 2);
   mergeSortHelper(a, l, m); mergeSortHelper(a, m + 1, r);
-  const L = a.slice(l, m + 1), R = a.slice(m + 1, r + 1);
+  const left = a.slice(l, m + 1), right = a.slice(m + 1, r + 1);
   let i = 0, j = 0, k = l;
-  while (i < L.length && j < R.length) a[k++] = L[i].voltage <= R[j].voltage ? L[i++] : R[j++];
-  while (i < L.length) a[k++] = L[i++];
-  while (j < R.length) a[k++] = R[j++];
+  while (i < left.length && j < right.length)
+    if (left[i].voltage <= right[j].voltage) { a[k++] = left[i++]; } else { a[k++] = right[j++]; }
+  while (i < left.length) a[k++] = left[i++];
+  while (j < right.length) a[k++] = right[j++];
 }
 
 export function quickSort(arr: SensorReading[]): SensorReading[] {
@@ -465,42 +302,10 @@ export function quickSort(arr: SensorReading[]): SensorReading[] {
 
 function quickSortHelper(a: SensorReading[], lo: number, hi: number): void {
   if (lo >= hi) return;
-  const p = a[hi].voltage; let i = lo - 1;
-  for (let j = lo; j < hi; j++) if (a[j].voltage <= p) { i++; [a[i], a[j]] = [a[j], a[i]]; }
+  const pivot = a[hi].voltage; let i = lo - 1;
+  for (let j = lo; j < hi; j++) if (a[j].voltage <= pivot) { i++; [a[i], a[j]] = [a[j], a[i]]; }
   [a[i + 1], a[hi]] = [a[hi], a[i + 1]];
   quickSortHelper(a, lo, i); quickSortHelper(a, i + 2, hi);
-}
-
-// ============================================================
-//  Searching Algorithms
-// ============================================================
-export function linearSearchBelow(arr: SensorReading[], threshold: number): { index: number; reading: SensorReading } | null {
-  for (let i = 0; i < arr.length; i++) {
-    if (arr[i].voltage < threshold) return { index: i, reading: arr[i] };
-  }
-  return null;
-}
-
-export function linearSearchAllBelow(arr: SensorReading[], threshold: number): { index: number; reading: SensorReading }[] {
-  const results: { index: number; reading: SensorReading }[] = [];
-  for (let i = 0; i < arr.length; i++) {
-    if (arr[i].voltage < threshold) results.push({ index: i, reading: arr[i] });
-  }
-  return results;
-}
-
-export function binarySearchByVoltage(sortedArr: SensorReading[], target: number): { index: number; reading: SensorReading; comparisons: number } | null {
-  let lo = 0, hi = sortedArr.length - 1, comparisons = 0;
-  let closest = -1, closestDiff = Infinity;
-  while (lo <= hi) {
-    const mid = Math.floor((lo + hi) / 2); comparisons++;
-    const diff = Math.abs(sortedArr[mid].voltage - target);
-    if (diff < closestDiff) { closestDiff = diff; closest = mid; }
-    if (diff < 0.01) return { index: mid, reading: sortedArr[mid], comparisons };
-    if (sortedArr[mid].voltage < target) lo = mid + 1; else hi = mid - 1;
-  }
-  if (closest >= 0) return { index: closest, reading: sortedArr[closest], comparisons };
-  return null;
 }
 
 // ============================================================
@@ -575,8 +380,8 @@ export class LaserChamber {
   analyze(reading: SensorReading, waterTemp: number): MicroplasticEvent | null {
     const drop = this.baseline - reading.voltage;
     if (drop >= this.detectionThreshold) {
-      const duration = 1.0 + Math.random() * 9;
       this.detectionCount++;
+      const duration = +(2.0 + Math.random() * 3.0).toFixed(1);
       return new MicroplasticEvent(reading.timestamp, drop, this.baseline, duration, waterTemp);
     }
     return null;
@@ -594,11 +399,8 @@ export interface SimLog {
 
 export class SimulationEngine {
   sensorLog = new SensorLinkedList();
-  eventHistory = new EventDoublyList();
   slidingWindow = new CircularBuffer(10);
   alertQueue = new AlertQueue();
-  calibrationStack = new CalibrationStack();
-  detectionTree = new DetectionBST();
 
   turbiditySensor = new TurbiditySensor();
   tempSensor = new TemperatureSensor();
@@ -609,16 +411,26 @@ export class SimulationEngine {
 
   constructor() {
     this.reset();
+    this.seedDefaultData();
+  }
+
+  // Pre-seed initial 10 baseline samples with one transient optical drop
+  seedDefaultData(): void {
+    const defaultVoltages = [2.98, 3.02, 2.42, 3.00, 3.05, 3.00, 3.02, 2.75, 2.98, 3.03];
+    for (let i = 0; i < defaultVoltages.length; i++) {
+      const ts = +((i + 1) * 0.1).toFixed(1);
+      const reading = new SensorReading(ts, defaultVoltages[i], 'PHOTODIODE', true);
+      this.sensorLog.append(reading);
+      this.slidingWindow.insert(reading);
+    }
+    this.simulationTime = 1.0;
   }
 
   // Reset all data structures to fresh, clean initial boot state
   reset(): void {
     this.sensorLog = new SensorLinkedList();
-    this.eventHistory = new EventDoublyList();
     this.slidingWindow = new CircularBuffer(10);
     this.alertQueue = new AlertQueue();
-    this.calibrationStack = new CalibrationStack();
-    this.detectionTree = new DetectionBST();
 
     this.turbiditySensor = new TurbiditySensor();
     this.tempSensor = new TemperatureSensor();
@@ -638,10 +450,6 @@ export class SimulationEngine {
     const waterTemp = this.tempSensor.read();
     const corrected = this.tempSensor.correctBaseline(3.0);
     this.laserChamber.calibrate(corrected);
-    this.calibrationStack.push({
-      baseline: corrected, threshold: this.turbiditySensor.threshold,
-      correction: this.tempSensor.correctionFactor, timestamp: this.simulationTime, description: `Run Calib #${this.calibrationStack.getSize() + 1}`
-    });
 
     // Phase 2: Start hardware
     this.pumpRunning = true;
@@ -678,8 +486,6 @@ export class SimulationEngine {
         // Analyze for microplastics
         const event = this.laserChamber.analyze(reading, waterTemp);
         if (event) {
-          this.eventHistory.append(event);
-          this.detectionTree.insert(event);
           onLog({ type: 'detection', data: {
             id: event.eventID, timestamp: event.timestamp, voltageDrop: event.voltageDrop,
             baseline: event.baselineVoltage, severity: event.severity, confidence: event.confidence()
@@ -721,13 +527,9 @@ export class SimulationEngine {
       freeHeap: 280000, // simulated
       simTime: this.simulationTime,
       sensorLogSize: this.sensorLog.getSize(),
-      eventHistorySize: this.eventHistory.getSize(),
       slidingWindowSize: this.slidingWindow.getSize(),
       slidingWindowCap: this.slidingWindow.getCapacity(),
       alertQueueSize: this.alertQueue.getSize(),
-      calibStackSize: this.calibrationStack.getSize(),
-      bstSize: this.detectionTree.getSize(),
-      bstHeight: this.detectionTree.getHeight(),
     };
   }
 }

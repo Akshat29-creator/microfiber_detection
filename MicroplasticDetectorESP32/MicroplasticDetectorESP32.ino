@@ -4,13 +4,10 @@
 //
 //  DSA Concepts Demonstrated:
 //    [MANDATORY] 1. Classes & Objects (7+ classes)
-//    [MANDATORY] 2. Pointers (linked lists, BST, dynamic alloc)
-//    [MANDATORY] 3. Linked Lists (Singly, Doubly, Circular)
+//    [MANDATORY] 2. Pointers (linked lists, dynamic alloc)
+//    [MANDATORY] 3. Linked Lists (Singly, Circular)
 //    [EXTRA]     4. Sorting (Bubble, Selection, Insertion, Merge, Quick)
-//    [EXTRA]     5. Searching (Linear, Binary)
-//    [EXTRA]     6. Stack (Calibration Undo/Redo)
-//    [EXTRA]     7. Queue (Alert Processing)
-//    [EXTRA]     8. BST (Timestamp Indexing)
+//    [EXTRA]     5. Queue (Alert Processing)
 //
 //  Board: ESP32 (NodeMCU-32S / ESP32 Dev Module)
 //  Baud Rate: 115200
@@ -22,23 +19,16 @@
 #include "SensorReading.h"
 #include "MicroplasticEvent.h"
 #include "SensorLinkedList.h"
-#include "EventDoublyList.h"
 #include "CircularBuffer.h"
 #include "AlertQueue.h"
-#include "CalibrationStack.h"
-#include "DetectionBST.h"
 #include "SortingAlgorithms.h"
-#include "SearchAlgorithms.h"
 
 // ============================================================
-//  GLOBAL OBJECTS (all DSA data structures)
+//  GLOBAL OBJECTS (DSA data structures)
 // ============================================================
 SensorLinkedList   sensorLog;             // Singly Linked List
-EventDoublyList    eventHistory;          // Doubly Linked List
 CircularBuffer     slidingWindow(10);     // Circular Linked List
 AlertQueue         alertQueue;            // Queue
-CalibrationStack   calibrationStack;      // Stack
-DetectionBST       detectionTree;         // Binary Search Tree
 
 float simulationTime = 0.0;
 int   currentMenu = 0;   // 0 = main menu
@@ -284,16 +274,12 @@ void displayMainMenu() {
     Serial.println("  ==========================================");
     Serial.println("   1. Run Full Detection Simulation");
     Serial.println("   2. Sensor Log (Singly Linked List)");
-    Serial.println("   3. Event History (Doubly Linked List)");
-    Serial.println("   4. Sliding Window (Circular LL)");
-    Serial.println("   5. Sorting Algorithms");
-    Serial.println("   6. Searching Algorithms");
-    Serial.println("   7. Calibration Stack");
-    Serial.println("   8. Alert Queue");
-    Serial.println("   9. Detection BST");
-    Serial.println("  10. System Status");
+    Serial.println("   3. Sliding Window (Circular LL)");
+    Serial.println("   4. Sorting Algorithms");
+    Serial.println("   5. Alert Queue");
+    Serial.println("   6. System Status");
     Serial.println("  ==========================================");
-    Serial.println("  Enter choice (1-10):");
+    Serial.println("  Enter choice (1-6):");
 }
 
 // ============================================================
@@ -311,9 +297,6 @@ void runFullSimulation() {
     tempSensor.displayStatus();
     float corrected = tempSensor.correctBaseline(3.0);
     laserChamber.calibrate(corrected);
-    calibrationStack.push(CalibrationState(corrected, turbiditySensor.getThreshold(),
-                                            tempSensor.getCorrectionFactor(),
-                                            simulationTime, "Initial"));
 
     // Phase 2: Pump
     Serial.println("\n  --- Phase 2: Pump Start ---");
@@ -350,8 +333,6 @@ void runFullSimulation() {
         MicroplasticEvent* event = laserChamber.analyzeReading(reading, waterTemp);
         if (event != nullptr) {
             detectedCount++;
-            eventHistory.append(*event);
-            detectionTree.insert(*event);
             alertQueue.enqueue(Alert("INFO", "Microplastic detected!", simulationTime, 4));
 
             Serial.print("  ["); Serial.print(i + 1); Serial.print("] ");
@@ -420,34 +401,7 @@ void sensorLogMenu() {
 }
 
 // ============================================================
-//  3. EVENT HISTORY MENU
-// ============================================================
-void eventHistoryMenu() {
-    Serial.println("\n  === EVENTS (Doubly LL) ===");
-    Serial.println("  1. Forward traversal");
-    Serial.println("  2. Reverse traversal");
-    Serial.println("  3. Delete by ID");
-    Serial.println("  4. Statistics");
-    Serial.println("  0. Back");
-    Serial.println("  Choice:");
-
-    int ch = readSerialInt();
-    switch (ch) {
-        case 1: eventHistory.displayForward(); break;
-        case 2: eventHistory.displayReverse(); break;
-        case 3: {
-            Serial.println("  Event ID to delete:");
-            int id = readSerialInt();
-            Serial.println(eventHistory.deleteByID(id) ? "  Deleted." : "  Not found!");
-            break;
-        }
-        case 4: eventHistory.displayStatistics(); break;
-        default: break;
-    }
-}
-
-// ============================================================
-//  4. SLIDING WINDOW MENU
+//  3. SLIDING WINDOW MENU
 // ============================================================
 void slidingWindowMenu() {
     Serial.println("\n  === SLIDING WINDOW (Circular LL) ===");
@@ -545,99 +499,7 @@ void sortingMenu() {
 }
 
 // ============================================================
-//  6. SEARCHING MENU
-// ============================================================
-void searchingMenu() {
-    if (sensorLog.isEmpty()) {
-        Serial.println("  [!] Run simulation first (Option 1)");
-        return;
-    }
-
-    Serial.println("\n  === SEARCHING ===");
-    Serial.println("  1. Linear — below threshold");
-    Serial.println("  2. Linear — ALL below threshold");
-    Serial.println("  3. Binary — by voltage (sorts first)");
-    Serial.println("  4. Find Min voltage");
-    Serial.println("  5. Find Max voltage");
-    Serial.println("  0. Back");
-    Serial.println("  Choice:");
-
-    int ch = readSerialInt();
-    if (ch < 1 || ch > 5) return;
-
-    int arrSize;
-    SensorReading* arr = sensorLog.toArray(arrSize);
-    if (arr == nullptr) return;
-
-    switch (ch) {
-        case 1: {
-            Serial.println("  Threshold voltage:");
-            float t = readSerialFloat();
-            linearSearchByVoltage(arr, arrSize, t, true);
-            break;
-        }
-        case 2: {
-            Serial.println("  Threshold voltage:");
-            float t = readSerialFloat();
-            linearSearchAllBreach(arr, arrSize, t);
-            break;
-        }
-        case 3: {
-            Serial.println("  Target voltage:");
-            float v = readSerialFloat();
-            mergeSortWrapper(arr, arrSize);
-            binarySearchByVoltage(arr, arrSize, v);
-            break;
-        }
-        case 4: findMinVoltage(arr, arrSize); break;
-        case 5: findMaxVoltage(arr, arrSize); break;
-    }
-    delete[] arr;
-}
-
-// ============================================================
-//  7. CALIBRATION STACK MENU
-// ============================================================
-void calibrationMenu() {
-    Serial.println("\n  === CALIBRATION STACK ===");
-    Serial.println("  1. View stack");
-    Serial.println("  2. Push new calibration");
-    Serial.println("  3. Undo last");
-    Serial.println("  4. View current (top)");
-    Serial.println("  0. Back");
-    Serial.println("  Choice:");
-
-    int ch = readSerialInt();
-    switch (ch) {
-        case 1: calibrationStack.display(); break;
-        case 2: {
-            Serial.println("  Baseline (V):"); float bv = readSerialFloat();
-            Serial.println("  Turb. threshold (V):"); float tt = readSerialFloat();
-            simulationTime += 1.0;
-            calibrationStack.push(CalibrationState(bv, tt, 1.0, simulationTime, "Manual"));
-            laserChamber.setBaseline(bv);
-            turbiditySensor.setThreshold(tt);
-            Serial.println("  Pushed!");
-            break;
-        }
-        case 3: {
-            CalibrationState restored = calibrationStack.undo();
-            laserChamber.setBaseline(restored.baselineVoltage);
-            turbiditySensor.setThreshold(restored.turbidityThreshold);
-            break;
-        }
-        case 4: {
-            CalibrationState top = calibrationStack.peek();
-            Serial.println("  Current:");
-            top.display();
-            break;
-        }
-        default: break;
-    }
-}
-
-// ============================================================
-//  8. ALERT QUEUE MENU
+//  5. ALERT QUEUE MENU
 // ============================================================
 void alertQueueMenu() {
     Serial.println("\n  === ALERT QUEUE ===");
@@ -669,46 +531,7 @@ void alertQueueMenu() {
 }
 
 // ============================================================
-//  9. BST MENU
-// ============================================================
-void bstMenu() {
-    Serial.println("\n  === DETECTION BST ===");
-    Serial.println("  1. Inorder (chronological)");
-    Serial.println("  2. Preorder");
-    Serial.println("  3. Postorder");
-    Serial.println("  4. Search by timestamp");
-    Serial.println("  5. Range search");
-    Serial.println("  6. Tree info");
-    Serial.println("  0. Back");
-    Serial.println("  Choice:");
-
-    int ch = readSerialInt();
-    switch (ch) {
-        case 1: detectionTree.displayInorder(); break;
-        case 2: detectionTree.displayPreorder(); break;
-        case 3: detectionTree.displayPostorder(); break;
-        case 4: {
-            Serial.println("  Timestamp (s):");
-            float ts = readSerialFloat();
-            detectionTree.search(ts);
-            break;
-        }
-        case 5: {
-            Serial.println("  Start time (s):"); float s = readSerialFloat();
-            Serial.println("  End time (s):"); float e = readSerialFloat();
-            detectionTree.rangeSearch(s, e);
-            break;
-        }
-        case 6:
-            Serial.print("  Events: "); Serial.println(detectionTree.getSize());
-            Serial.print("  Height: "); Serial.println(detectionTree.getHeight());
-            break;
-        default: break;
-    }
-}
-
-// ============================================================
-//  10. SYSTEM STATUS
+//  6. SYSTEM STATUS
 // ============================================================
 void showStatus() {
     Serial.println("\n  ==========================================");
@@ -723,13 +546,9 @@ void showStatus() {
 
     Serial.println("\n  -- Data Structures --");
     Serial.print("  Sensor Log (Singly LL)  : "); Serial.print(sensorLog.getSize()); Serial.println(" readings");
-    Serial.print("  Events (Doubly LL)      : "); Serial.print(eventHistory.getSize()); Serial.println(" events");
     Serial.print("  Sliding Window (Circ LL): "); Serial.print(slidingWindow.getSize());
     Serial.print("/"); Serial.println(slidingWindow.getCapacity());
     Serial.print("  Alert Queue             : "); Serial.print(alertQueue.getSize()); Serial.println(" pending");
-    Serial.print("  Calibration Stack       : "); Serial.print(calibrationStack.getSize()); Serial.println(" entries");
-    Serial.print("  Detection BST           : "); Serial.print(detectionTree.getSize());
-    Serial.print(" events (h="); Serial.print(detectionTree.getHeight()); Serial.println(")");
 
     Serial.print("\n  Simulation Time: "); Serial.print(simulationTime, 1); Serial.println("s");
     Serial.print("  Free Heap: "); Serial.print(ESP.getFreeHeap()); Serial.println(" bytes");
@@ -761,8 +580,7 @@ void setup() {
     Serial.println("  |   MIT Manipal | B.Tech CPS | Sem 3     |");
     Serial.println("  |                                        |");
     Serial.println("  |   Classes, Pointers, Linked Lists,     |");
-    Serial.println("  |   Sorting, Searching, Stack, Queue,    |");
-    Serial.println("  |   Binary Search Tree                   |");
+    Serial.println("  |   Sorting, Alert Queue                 |");
     Serial.println("  |                                        |");
     Serial.println("  ==========================================");
     Serial.println();
@@ -785,14 +603,10 @@ void loop() {
         switch (choice) {
             case 1:  runFullSimulation();  break;
             case 2:  sensorLogMenu();      break;
-            case 3:  eventHistoryMenu();   break;
-            case 4:  slidingWindowMenu();  break;
-            case 5:  sortingMenu();        break;
-            case 6:  searchingMenu();      break;
-            case 7:  calibrationMenu();    break;
-            case 8:  alertQueueMenu();     break;
-            case 9:  bstMenu();            break;
-            case 10: showStatus();         break;
+            case 3:  slidingWindowMenu();  break;
+            case 4:  sortingMenu();        break;
+            case 5:  alertQueueMenu();     break;
+            case 6:  showStatus();         break;
             default:
                 if (choice != 0)
                     Serial.println("  Invalid choice.");

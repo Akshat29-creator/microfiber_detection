@@ -2,7 +2,7 @@
 import { useWS } from '@/context/WebSocketContext';
 import {
   Activity, Droplets, Thermometer, Zap, AlertTriangle,
-  ArrowRight, Play, CheckCircle2, ShieldAlert
+  Play, CheckCircle2, ShieldAlert
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -15,28 +15,27 @@ export default function DashboardPage() {
     sensors,
     systemStatus,
     voltageHistory,
+    sensorLog,
     alerts,
     detections,
     connected,
     mode,
-    circularBuffer,
-    calibrationStack,
-    sensorLog,
-    bstData,
+    togglePump,
+    toggleLaser,
   } = useWS();
 
   const isPumpOn = systemStatus.pump === 'RUNNING';
   const isLaserOn = systemStatus.laser === 'ON';
   const isClear = sensors.turbidity >= 2.50;
 
+  // Real-time photodiode voltage stream:
+  // In real mode: plot live hardware ADC voltages (empty when offline).
+  // In demo mode: plot the continuous telemetry stream from the simulation engine.
   const displayVoltageHistory = voltageHistory.length > 0
     ? voltageHistory
     : (mode === 'real'
-        ? []  // Real mode: never show fake chart data — wait for actual ESP32 ADC readings
-        : Array.from({ length: 24 }, (_, i) => ({
-            ts: +(i * 0.2).toFixed(1),
-            v: +(3.02 + Math.sin(i * 0.5) * 0.03 + (i % 2 === 0 ? 0.01 : -0.01)).toFixed(3),
-          })));
+        ? []
+        : sensorLog.map(r => ({ ts: r.timestamp, v: r.voltage })));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -221,7 +220,7 @@ export default function DashboardPage() {
             {systemStatus.detections || detections.length} <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>events</span>
           </div>
           <span className={`metric-badge ${detections.length > 0 ? 'rose' : (mode === 'real' && !connected ? 'gray' : 'cyan')}`}>
-            {detections.length > 0 ? 'Logged in DLL & BST' : (mode === 'real' && !connected ? 'Offline' : 'No Particles')}
+            {detections.length > 0 ? 'Contamination Detected' : (mode === 'real' && !connected ? 'Offline' : 'No Particles')}
           </span>
         </div>
       </div>
@@ -318,6 +317,7 @@ export default function DashboardPage() {
           </div>
           
           {/* Chamber Optical Metrics Strip */}
+          {/* Chamber Optical Metrics Strip */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border-color)' }}>
             <div style={{ padding: '8px 10px', borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
               <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>TRANSMISSIVITY</div>
@@ -328,7 +328,7 @@ export default function DashboardPage() {
             <div style={{ padding: '8px 10px', borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
               <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>OPTICAL SNR</div>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent-emerald)', fontFamily: "'JetBrains Mono', monospace" }}>
-                43.2 dB
+                {mode === 'real' && !connected ? '--' : sensors.photodiode > 0 ? `${(20 * Math.log10(sensors.photodiode / 0.025)).toFixed(1)} dB` : '43.2 dB'}
               </div>
             </div>
             <div style={{ padding: '8px 10px', borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
@@ -340,7 +340,7 @@ export default function DashboardPage() {
             <div style={{ padding: '8px 10px', borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
               <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>SAMPLING CADENCE</div>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent-purple)', fontFamily: "'JetBrains Mono', monospace" }}>
-                100 Hz
+                {mode === 'real' && !connected ? '--' : '100 Hz'}
               </div>
             </div>
           </div>
@@ -355,7 +355,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Actuator Status Pills */}
+          {/* Actuator Status Pills with Interactive Real-Time Toggle */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
             <div
               style={{
@@ -374,7 +374,15 @@ export default function DashboardPage() {
                   {systemStatus.pump || 'OFF'}
                 </div>
               </div>
-              <span className={`telemetry-dot ${isPumpOn ? 'cyan' : 'gray'}`} />
+              <button
+                className={`btn ${isPumpOn ? 'btn-danger' : 'btn-secondary'}`}
+                style={{ fontSize: 11, padding: '4px 8px' }}
+                onClick={togglePump}
+                disabled={mode === 'real' && !connected}
+                title={isPumpOn ? 'Turn off peristaltic pump' : 'Turn on peristaltic pump'}
+              >
+                {isPumpOn ? 'Stop' : 'Start'}
+              </button>
             </div>
 
             <div
@@ -394,7 +402,15 @@ export default function DashboardPage() {
                   {isLaserOn ? '650nm ON' : 'OFF'}
                 </div>
               </div>
-              <span className={`telemetry-dot ${isLaserOn ? 'rose' : 'gray'}`} />
+              <button
+                className={`btn ${isLaserOn ? 'btn-danger' : 'btn-secondary'}`}
+                style={{ fontSize: 11, padding: '4px 8px' }}
+                onClick={toggleLaser}
+                disabled={mode === 'real' && !connected}
+                title={isLaserOn ? 'Turn off 650nm laser' : 'Turn on 650nm laser'}
+              >
+                {isLaserOn ? 'Off' : 'On'}
+              </button>
             </div>
           </div>
 
@@ -428,75 +444,6 @@ export default function DashboardPage() {
               ))}
             </div>
           )}
-        </div>
-      </div>
-
-      {/* 6 DSA Cards Grid */}
-      <div className="card">
-        <div className="card-header">
-          <div>
-            <div className="card-title">Data Structure Telemetry</div>
-            <div className="card-subtitle">In-memory C++ structures tracking sensor states and detections</div>
-          </div>
-        </div>
-
-        <div className="dsa-grid">
-          {[
-            {
-              tag: 'SLL',
-              title: 'Sensor Log',
-              desc: 'Sequential optical sensor readings logged with O(1) append',
-              count: `${sensorLog.length} readings`,
-              href: '/sensor-log',
-            },
-            {
-              tag: 'DLL',
-              title: 'Event History',
-              desc: 'Bi-directional traversal of detected microplastic anomalies',
-              count: `${detections.length} events`,
-              href: '/events',
-            },
-            {
-              tag: 'CLL',
-              title: 'Sliding Window',
-              desc: 'Circular 10-slot ring buffer for moving average smoothing',
-              count: `${circularBuffer.used}/10 slots`,
-              href: '/sliding-window',
-            },
-            {
-              tag: 'STACK',
-              title: 'Calibration History',
-              desc: 'LIFO baseline voltage snapshots with rollback undo',
-              count: `${calibrationStack.length} states`,
-              href: '/calibration',
-            },
-            {
-              tag: 'QUEUE',
-              title: 'Alert Queue',
-              desc: 'Priority queue for hardware failsafe and turbidity warnings',
-              count: `${alerts.length} alerts`,
-              href: '/alerts',
-            },
-            {
-              tag: 'BST',
-              title: 'Detection Index',
-              desc: `Timestamp-indexed tree for O(log n) lookups (h=${bstData.height})`,
-              count: `${bstData.size} nodes`,
-              href: '/bst',
-            },
-          ].map((item, idx) => (
-            <Link key={idx} href={item.href} className="dsa-card">
-              <div>
-                <div className="dsa-card-header">
-                  <span className="dsa-card-tag">{item.tag}</span>
-                  <ArrowRight size={13} style={{ color: 'var(--text-muted)' }} />
-                </div>
-                <div className="dsa-card-title">{item.title}</div>
-                <div className="dsa-card-desc">{item.desc}</div>
-              </div>
-              <div className="dsa-card-count">{item.count}</div>
-            </Link>
-          ))}
         </div>
       </div>
     </div>

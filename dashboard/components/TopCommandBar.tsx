@@ -33,14 +33,10 @@ export default function TopCommandBar() {
     '/': 'Dashboard Overview',
     '/simulation': 'Pipeline Simulation',
     '/system': 'System Diagnostics',
-    '/sensor-log': 'Sensor Log (Singly Linked List)',
-    '/events': 'Event History (Doubly Linked List)',
-    '/sliding-window': 'Sliding Window (Circular Linked List)',
-    '/calibration': 'Calibration (Stack LIFO)',
-    '/alerts': 'Alert Queue (Priority Queue)',
-    '/bst': 'Detection Index (Binary Search Tree)',
-    '/sorting': 'Sorting Algorithms Benchmark',
-    '/searching': 'Searching Algorithms Benchmark',
+    '/sensor-log': 'Sensor Log',
+    '/sliding-window': 'Sliding Window',
+    '/alerts': 'Alert Queue',
+    '/sorting': 'Sorting Algorithms',
   };
 
   const currentTitle = pageNames[pathname] || 'Dashboard';
@@ -87,7 +83,7 @@ export default function TopCommandBar() {
         <div className="telemetry-pill">
           <Cpu size={12} style={{ color: 'var(--accent-purple)' }} />
           <span>Heap:</span>
-          <strong>{systemStatus.freeHeap > 0 ? `${Math.round(systemStatus.freeHeap / 1024)} KB` : '248 KB'}</strong>
+          <strong>{systemStatus.freeHeap > 0 ? `${Math.round(systemStatus.freeHeap / 1024)} KB` : (mode === 'real' && !connected ? '-- KB' : '248 KB')}</strong>
         </div>
       </div>
 

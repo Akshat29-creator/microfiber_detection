@@ -4,13 +4,10 @@
 //  
 //  DSA Concepts Demonstrated:
 //    [MANDATORY] 1. Classes & Objects (7+ classes)
-//    [MANDATORY] 2. Pointers (throughout linked lists, BST, dynamic alloc)
-//    [MANDATORY] 3. Linked Lists (Singly, Doubly, Circular)
+//    [MANDATORY] 2. Pointers (throughout linked lists, dynamic alloc)
+//    [MANDATORY] 3. Linked Lists (Singly, Circular)
 //    [EXTRA]     4. Sorting (Bubble, Selection, Insertion, Merge, Quick)
-//    [EXTRA]     5. Searching (Linear, Binary)
-//    [EXTRA]     6. Stack (Calibration Undo/Redo)
-//    [EXTRA]     7. Queue (Alert Processing, Priority Queue)
-//    [EXTRA]     8. Binary Search Tree (Timestamp Indexing)
+//    [EXTRA]     5. Queue (Alert Processing, Priority Queue)
 //
 //  Project: Low-Cost Optical Attenuation System for
 //           Real-Time Microplastic Detection
@@ -29,13 +26,9 @@
 #include "SensorReading.h"
 #include "MicroplasticEvent.h"
 #include "SensorLinkedList.h"
-#include "EventDoublyList.h"
 #include "CircularBuffer.h"
 #include "AlertQueue.h"
-#include "CalibrationStack.h"
-#include "DetectionBST.h"
 #include "SortingAlgorithms.h"
-#include "SearchAlgorithms.h"
 #include "TurbiditySensor.h"
 #include "TemperatureSensor.h"
 #include "LaserChamber.h"
@@ -46,11 +39,8 @@ using namespace std;
 
 // ---- Global System Objects ----
 SensorLinkedList     sensorLog;          // Singly linked list
-EventDoublyList      eventHistory;       // Doubly linked list
 CircularBuffer       slidingWindow(10);  // Circular linked list (window = 10)
 AlertQueue           alertQueue;         // Queue
-CalibrationStack     calibrationStack;   // Stack
-DetectionBST         detectionTree;      // Binary Search Tree
 TurbiditySensor      turbiditySensor;    // Class
 TemperatureSensor    tempSensor;         // Class
 LaserChamber         laserChamber;       // Class
@@ -71,15 +61,11 @@ void displayMainMenu() {
     cout << "  |                                                      |" << endl;
     cout << "  |   1.  Run Full Detection Simulation                  |" << endl;
     cout << "  |   2.  Sensor Log (Singly Linked List)                |" << endl;
-    cout << "  |   3.  Event History (Doubly Linked List)             |" << endl;
-    cout << "  |   4.  Sliding Window (Circular Linked List)          |" << endl;
-    cout << "  |   5.  Sorting Algorithms                             |" << endl;
-    cout << "  |   6.  Searching Algorithms                           |" << endl;
-    cout << "  |   7.  Calibration Stack (Undo/Redo)                  |" << endl;
-    cout << "  |   8.  Alert Queue                                    |" << endl;
-    cout << "  |   9.  Detection BST (Tree Operations)                |" << endl;
-    cout << "  |  10.  System Dashboard                               |" << endl;
-    cout << "  |  11.  View All System Status                         |" << endl;
+    cout << "  |   3.  Sliding Window (Circular Linked List)          |" << endl;
+    cout << "  |   4.  Sorting Algorithms                             |" << endl;
+    cout << "  |   5.  Alert Queue                                    |" << endl;
+    cout << "  |   6.  System Dashboard                               |" << endl;
+    cout << "  |   7.  View All System Status                         |" << endl;
     cout << "  |   0.  Exit                                           |" << endl;
     cout << "  |                                                      |" << endl;
     cout << "  +======================================================+" << endl;
@@ -109,13 +95,6 @@ void runFullSimulation() {
     double rawBaseline = 3.0;
     double correctedBaseline = tempSensor.correctBaseline(rawBaseline);
     laserChamber.calibrate(correctedBaseline);
-
-    // Save initial calibration to stack
-    calibrationStack.push(CalibrationState(
-        correctedBaseline, turbiditySensor.getThreshold(),
-        tempSensor.getCorrectionFactor(), simulationTime,
-        "Initial calibration"
-    ));
 
     // --- Phase 2: Activate Pump ---
     cout << "\n  --- Phase 2: Pump Activation ---" << endl;
@@ -168,12 +147,6 @@ void runFullSimulation() {
         if (event != nullptr) {
             // Microplastic detected!
             detectedCount++;
-
-            // Add to doubly linked list (event history)
-            eventHistory.append(*event);
-
-            // Add to BST (timestamp index)
-            detectionTree.insert(*event);
 
             // Generate alert
             Alert detAlert("INFO", "Microplastic detected! Drop: " +
@@ -312,68 +285,7 @@ void sensorLogMenu() {
 }
 
 // ============================================================
-//  3. EVENT HISTORY MENU (Doubly Linked List)
-// ============================================================
-void eventHistoryMenu() {
-    int choice;
-    do {
-        cout << "\n  === EVENT HISTORY (Doubly Linked List) ===" << endl;
-        cout << "  1. Display forward (chronological)" << endl;
-        cout << "  2. Display reverse (most recent first)" << endl;
-        cout << "  3. Add manual event" << endl;
-        cout << "  4. Delete event by ID" << endl;
-        cout << "  5. Show statistics" << endl;
-        cout << "  6. Show size" << endl;
-        cout << "  0. Back to main menu" << endl;
-        cout << "  Choice: ";
-        cin >> choice;
-
-        switch (choice) {
-            case 1:
-                eventHistory.displayForward();
-                break;
-
-            case 2:
-                eventHistory.displayReverse();
-                break;
-
-            case 3: {
-                double ts, drop, base, dur, temp;
-                cout << "  Enter timestamp (s): "; cin >> ts;
-                cout << "  Enter voltage drop (V): "; cin >> drop;
-                cout << "  Enter baseline voltage (V): "; cin >> base;
-                cout << "  Enter duration (ms): "; cin >> dur;
-                cout << "  Enter water temperature (C): "; cin >> temp;
-                MicroplasticEvent e(ts, drop, base, dur, temp);
-                eventHistory.append(e);
-                detectionTree.insert(e);
-                cout << "  Event added." << endl;
-                break;
-            }
-
-            case 4: {
-                int id;
-                cout << "  Enter Event ID to delete: "; cin >> id;
-                if (eventHistory.deleteByID(id))
-                    cout << "  Event #" << id << " deleted (marked as false positive)." << endl;
-                else
-                    cout << "  Event ID not found!" << endl;
-                break;
-            }
-
-            case 5:
-                eventHistory.displayStatistics();
-                break;
-
-            case 6:
-                cout << "  Total events: " << eventHistory.getSize() << endl;
-                break;
-        }
-    } while (choice != 0);
-}
-
-// ============================================================
-//  4. SLIDING WINDOW MENU (Circular Linked List)
+//  3. SLIDING WINDOW MENU (Circular Linked List)
 // ============================================================
 void slidingWindowMenu() {
     int choice;
@@ -533,138 +445,7 @@ void sortingMenu() {
 }
 
 // ============================================================
-//  6. SEARCHING MENU
-// ============================================================
-void searchingMenu() {
-    if (sensorLog.isEmpty()) {
-        cout << "\n  [!] Sensor log is empty. Run a simulation first (Option 1)." << endl;
-        return;
-    }
-
-    int choice;
-    do {
-        cout << "\n  === SEARCHING ALGORITHMS ===" << endl;
-        cout << "  1. Linear Search — find first below threshold" << endl;
-        cout << "  2. Linear Search — find ALL below threshold" << endl;
-        cout << "  3. Linear Search — by timestamp" << endl;
-        cout << "  4. Binary Search — by voltage (sorts first)" << endl;
-        cout << "  5. Find Min voltage" << endl;
-        cout << "  6. Find Max voltage" << endl;
-        cout << "  0. Back to main menu" << endl;
-        cout << "  Choice: ";
-        cin >> choice;
-
-        if (choice >= 1 && choice <= 6) {
-            int arrSize;
-            SensorReading* arr = sensorLog.toArray(arrSize);
-
-            if (arr == nullptr) {
-                cout << "  [!] No data to search." << endl;
-                continue;
-            }
-
-            switch (choice) {
-                case 1: {
-                    double threshold;
-                    cout << "  Enter voltage threshold: "; cin >> threshold;
-                    linearSearchByVoltage(arr, arrSize, threshold, true);
-                    break;
-                }
-                case 2: {
-                    double threshold;
-                    cout << "  Enter voltage threshold: "; cin >> threshold;
-                    linearSearchAllBreach(arr, arrSize, threshold);
-                    break;
-                }
-                case 3: {
-                    double ts;
-                    cout << "  Enter timestamp to find: "; cin >> ts;
-                    linearSearchByTimestamp(arr, arrSize, ts);
-                    break;
-                }
-                case 4: {
-                    double v;
-                    cout << "  Enter voltage to search: "; cin >> v;
-                    // Must sort first for binary search
-                    cout << "  (Sorting array first for binary search...)" << endl;
-                    mergeSortWrapper(arr, arrSize);
-                    binarySearchByVoltage(arr, arrSize, v);
-                    break;
-                }
-                case 5:
-                    findMinVoltage(arr, arrSize);
-                    break;
-                case 6:
-                    findMaxVoltage(arr, arrSize);
-                    break;
-            }
-
-            delete[] arr;
-        }
-    } while (choice != 0);
-}
-
-// ============================================================
-//  7. CALIBRATION STACK MENU
-// ============================================================
-void calibrationMenu() {
-    int choice;
-    do {
-        cout << "\n  === CALIBRATION STACK (Undo/Redo) ===" << endl;
-        cout << "  1. View calibration history (stack)" << endl;
-        cout << "  2. Push new calibration" << endl;
-        cout << "  3. Undo last calibration" << endl;
-        cout << "  4. View current (top) calibration" << endl;
-        cout << "  5. Show stack size" << endl;
-        cout << "  0. Back to main menu" << endl;
-        cout << "  Choice: ";
-        cin >> choice;
-
-        switch (choice) {
-            case 1:
-                calibrationStack.display();
-                break;
-
-            case 2: {
-                double bv, tt, tc;
-                string desc;
-                cout << "  Enter new baseline voltage (V): "; cin >> bv;
-                cout << "  Enter turbidity threshold (V): "; cin >> tt;
-                cout << "  Enter temp correction factor: "; cin >> tc;
-                cin.ignore();
-                cout << "  Enter description: ";
-                getline(cin, desc);
-                simulationTime += 1.0;
-                calibrationStack.push(CalibrationState(bv, tt, tc, simulationTime, desc));
-                laserChamber.setBaseline(bv);
-                turbiditySensor.setThreshold(tt);
-                cout << "  Calibration pushed. Laser baseline updated." << endl;
-                break;
-            }
-
-            case 3: {
-                CalibrationState restored = calibrationStack.undo();
-                laserChamber.setBaseline(restored.baselineVoltage);
-                turbiditySensor.setThreshold(restored.turbidityThreshold);
-                break;
-            }
-
-            case 4: {
-                CalibrationState top = calibrationStack.peek();
-                cout << "  Current calibration:" << endl;
-                top.display();
-                break;
-            }
-
-            case 5:
-                cout << "  Stack depth: " << calibrationStack.getSize() << endl;
-                break;
-        }
-    } while (choice != 0);
-}
-
-// ============================================================
-//  8. ALERT QUEUE MENU
+//  5. ALERT QUEUE MENU
 // ============================================================
 void alertQueueMenu() {
     int choice;
@@ -734,63 +515,7 @@ void alertQueueMenu() {
 }
 
 // ============================================================
-//  9. BST MENU
-// ============================================================
-void bstMenu() {
-    int choice;
-    do {
-        cout << "\n  === DETECTION BST (Binary Search Tree) ===" << endl;
-        cout << "  1. Inorder traversal (chronological)" << endl;
-        cout << "  2. Preorder traversal" << endl;
-        cout << "  3. Postorder traversal" << endl;
-        cout << "  4. Search by timestamp" << endl;
-        cout << "  5. Range search (time range)" << endl;
-        cout << "  6. Delete by timestamp" << endl;
-        cout << "  7. Tree info (size, height)" << endl;
-        cout << "  0. Back to main menu" << endl;
-        cout << "  Choice: ";
-        cin >> choice;
-
-        switch (choice) {
-            case 1:
-                detectionTree.displayInorder();
-                break;
-            case 2:
-                detectionTree.displayPreorder();
-                break;
-            case 3:
-                detectionTree.displayPostorder();
-                break;
-            case 4: {
-                double ts;
-                cout << "  Enter timestamp to search: "; cin >> ts;
-                detectionTree.search(ts);
-                break;
-            }
-            case 5: {
-                double start, end;
-                cout << "  Enter start time (s): "; cin >> start;
-                cout << "  Enter end time (s): "; cin >> end;
-                detectionTree.rangeSearch(start, end);
-                break;
-            }
-            case 6: {
-                double ts;
-                cout << "  Enter timestamp to delete: "; cin >> ts;
-                detectionTree.deleteEvent(ts);
-                cout << "  Event deleted from BST." << endl;
-                break;
-            }
-            case 7:
-                cout << "  Total events in BST: " << detectionTree.getSize() << endl;
-                cout << "  Tree height: " << detectionTree.getHeight() << endl;
-                break;
-        }
-    } while (choice != 0);
-}
-
-// ============================================================
-//  10. DASHBOARD
+//  6. DASHBOARD
 // ============================================================
 void showDashboard() {
     dashboard.displayDashboard();
@@ -813,7 +538,7 @@ void showDashboard() {
 }
 
 // ============================================================
-//  11. VIEW ALL SYSTEM STATUS
+//  7. VIEW ALL SYSTEM STATUS
 // ============================================================
 void viewAllStatus() {
     cout << "\n  +======================================================+" << endl;
@@ -831,13 +556,9 @@ void viewAllStatus() {
 
     cout << "\n  ----- Data Structures -----" << endl;
     cout << "  Sensor Log (Singly LL)     : " << sensorLog.getSize() << " readings" << endl;
-    cout << "  Event History (Doubly LL)  : " << eventHistory.getSize() << " events" << endl;
     cout << "  Sliding Window (Circular)  : " << slidingWindow.getSize()
          << "/" << slidingWindow.getCapacity() << " slots" << endl;
     cout << "  Alert Queue                : " << alertQueue.getSize() << " pending" << endl;
-    cout << "  Calibration Stack          : " << calibrationStack.getSize() << " entries" << endl;
-    cout << "  Detection BST              : " << detectionTree.getSize()
-         << " events (height: " << detectionTree.getHeight() << ")" << endl;
 
     cout << "\n  ----- Simulation -----" << endl;
     cout << "  Simulation Time: " << simulationTime << " seconds" << endl;
@@ -863,8 +584,8 @@ int main() {
     cout << "  |    DSA Project Implementation                                |" << endl;
     cout << "  |    MIT Manipal | B.Tech CPS | 3rd Semester                   |" << endl;
     cout << "  |                                                              |" << endl;
-    cout << "  |    DSA Concepts: Classes, Pointers, Linked Lists (3 types),  |" << endl;
-    cout << "  |    Sorting (5 algos), Searching (2 algos), Stack, Queue, BST |" << endl;
+    cout << "  |    DSA Concepts: Classes, Pointers, Linked Lists (2 types),  |" << endl;
+    cout << "  |    Sorting (5 algos), Queue (Alert Queue & Priority)         |" << endl;
     cout << "  |                                                              |" << endl;
     cout << "  +==============================================================+" << endl;
 
@@ -876,15 +597,11 @@ int main() {
         switch (choice) {
             case 1:  runFullSimulation();    break;
             case 2:  sensorLogMenu();        break;
-            case 3:  eventHistoryMenu();     break;
-            case 4:  slidingWindowMenu();    break;
-            case 5:  sortingMenu();          break;
-            case 6:  searchingMenu();        break;
-            case 7:  calibrationMenu();      break;
-            case 8:  alertQueueMenu();       break;
-            case 9:  bstMenu();              break;
-            case 10: showDashboard();        break;
-            case 11: viewAllStatus();        break;
+            case 3:  slidingWindowMenu();    break;
+            case 4:  sortingMenu();          break;
+            case 5:  alertQueueMenu();       break;
+            case 6:  showDashboard();        break;
+            case 7:  viewAllStatus();        break;
             case 0:
                 cout << "\n  Exiting Microplastic Detection System. Goodbye!\n" << endl;
                 break;

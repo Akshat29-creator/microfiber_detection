@@ -13,28 +13,24 @@ export default function SystemPage() {
     detections,
     alerts,
     sensorLog,
-    calibrationStack,
+    circularBuffer,
     mode,
   } = useWS();
 
   const heapPct = systemStatus.freeHeap > 0 ? Math.min((systemStatus.freeHeap / 320000) * 100, 100) : 0;
 
+  // Real-time photodiode voltage stream:
   const displayVoltageHistory = voltageHistory.length > 0
     ? voltageHistory
     : (mode === 'real'
-        ? []  // Real mode: never generate fake voltage chart data
-        : Array.from({ length: 24 }, (_, i) => ({
-            ts: +(i * 0.2).toFixed(1),
-            v: +(3.01 + Math.sin(i * 0.5) * 0.03 + (i % 2 === 0 ? 0.01 : -0.01)).toFixed(3),
-          })));
+        ? []
+        : sensorLog.map(r => ({ ts: r.timestamp, v: r.voltage })));
 
   const dsStructures = [
     { name: 'Sensor Log (SLL)', size: systemStatus.sensorLogSize || sensorLog.length, desc: 'Singly Linked List' },
-    { name: 'Event History (DLL)', size: systemStatus.eventHistorySize || detections.length, desc: 'Doubly Linked List' },
-    { name: 'Sliding Window (CLL)', size: `${systemStatus.slidingWindowSize}/${systemStatus.slidingWindowCap}`, desc: 'Circular Ring Buffer' },
+    { name: 'Sliding Window (CLL)', size: `${systemStatus.slidingWindowSize || circularBuffer.used}/${systemStatus.slidingWindowCap || circularBuffer.capacity || 10}`, desc: 'Circular Ring Buffer' },
     { name: 'Alert Queue', size: systemStatus.alertQueueSize || alerts.length, desc: 'Priority FIFO Queue' },
-    { name: 'Calibration Stack', size: systemStatus.calibStackSize || calibrationStack.length, desc: 'LIFO Undo Stack' },
-    { name: 'Detection BST', size: systemStatus.bstSize, desc: `BST Height: ${systemStatus.bstHeight}` },
+    { name: 'Sorting Algorithms', size: 5, desc: '5-Algorithm Benchmark Suite' },
   ];
 
   const hwComponents = [

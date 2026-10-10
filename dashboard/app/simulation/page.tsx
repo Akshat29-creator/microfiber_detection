@@ -46,12 +46,10 @@ export default function SimulationPage() {
   const clearCount = simResults.filter(r => r.type === 'clear').length;
 
   const phases = [
-    { id: 'BOOT', label: '1. Boot' },
-    { id: 'CALIBRATION', label: '2. Calibrate' },
-    { id: 'PUMP', label: '3. Pump Inflow' },
-    { id: 'TURBIDITY', label: '4. Turbidity Check' },
-    { id: 'LASER', label: '5. Laser Occlusion' },
-    { id: 'DONE', label: '6. Indexed' },
+    { id: 'IDLE', label: '1. Standby' },
+    { id: 'CALIBRATING', label: '2. Thermal Calibration' },
+    { id: 'PROCESSING', label: '3. Real-Time Detection Loop' },
+    { id: 'DONE', label: '4. Complete & Indexed' },
   ];
 
   const currentPhaseIndex = phases.findIndex(p => p.id === simulationProgress.phase);
@@ -229,12 +227,12 @@ export default function SimulationPage() {
               </div>
 
               <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-                <Link href="/events" className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center', fontSize: 12 }}>
-                  <span>View Events (DLL)</span>
+                <Link href="/sensor-log" className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center', fontSize: 12 }}>
+                  <span>View Sensor Log</span>
                   <ArrowRight size={13} />
                 </Link>
-                <Link href="/bst" className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center', fontSize: 12 }}>
-                  <span>Search BST</span>
+                <Link href="/sliding-window" className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center', fontSize: 12 }}>
+                  <span>View Sliding Window</span>
                   <ArrowRight size={13} />
                 </Link>
               </div>
@@ -292,66 +290,6 @@ export default function SimulationPage() {
         </div>
       </div>
 
-      {/* Physics & Embedded DSA Pipeline Reference (Fills Void & Explains Science) */}
-      <div className="card">
-        <div className="card-header">
-          <div>
-            <div className="card-title">Microplastic Detection Physics & Data Structure Architecture</div>
-            <div className="card-subtitle">Underlying physical optical laws and corresponding firmware algorithmic operations</div>
-          </div>
-          <span className="badge badge-cyan">Cyber-Physical Spec</span>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
-          {/* Card 1: Beer-Lambert Law */}
-          <div style={{ padding: 14, borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <div style={{ width: 24, height: 24, borderRadius: 6, background: 'rgba(6, 182, 212, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-cyan)' }}>
-                <Zap size={14} />
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Beer-Lambert Optical Scattering</span>
-            </div>
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-              Laser transmissivity follows I = I₀ · e^(-μx). When a microplastic particle (10μm–500μm) traverses the 650nm beam, light is scattered away from the BPW34 photodiode, triggering a steep voltage drop (&lt; 2.50V).
-            </p>
-            <div style={{ marginTop: 10, fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: 'var(--accent-cyan)' }}>
-              Threshold: V &lt; 2.500V = Microplastic Occlusion
-            </div>
-          </div>
-
-          {/* Card 2: Turbidity Protection */}
-          <div style={{ padding: 14, borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <div style={{ width: 24, height: 24, borderRadius: 6, background: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-amber)' }}>
-                <Droplets size={14} />
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Turbidity Muddy Water Cutoff</span>
-            </div>
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-              Heavy sediment or silt blocks laser transmissivity completely, generating false positives. If the turbidity sensor reads &lt; 2.50V, the peristaltic pump relay is immediately halted to preserve optics.
-            </p>
-            <div style={{ marginTop: 10, fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: 'var(--accent-amber)' }}>
-              Failsafe: Turbidity &lt; 2.50V = Pump Cutoff
-            </div>
-          </div>
-
-          {/* Card 3: Embedded DSA Pipeline */}
-          <div style={{ padding: 14, borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <div style={{ width: 24, height: 24, borderRadius: 6, background: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-emerald)' }}>
-                <CheckCircle2 size={14} />
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Dual-Core DSA Memory Ingestion</span>
-            </div>
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-              Every valid reading is appended to the Singly Linked List (O(1)) and smoothed across the 10-slot Circular Linked List (O(1)). Confirmed detections are indexed into both the Doubly Linked List and Binary Search Tree (O(log n)).
-            </p>
-            <div style={{ marginTop: 10, fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: 'var(--accent-emerald)' }}>
-              Routing: SLL → CLL → DLL (Events) → BST (Search)
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

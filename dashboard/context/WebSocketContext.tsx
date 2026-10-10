@@ -1,12 +1,11 @@
 'use client';
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import {
-  SimulationEngine, SensorLinkedList, EventDoublyList, CircularBuffer as CircBuf,
-  AlertQueue as AQ, CalibrationStack as CS, DetectionBST as BST,
-  SensorReading as SR, MicroplasticEvent, TurbiditySensor, TemperatureSensor, LaserChamber,
+  SimulationEngine, SensorLinkedList, CircularBuffer as CircBuf,
+  AlertQueue as AQ, SensorReading as SR, MicroplasticEvent,
+  TurbiditySensor, TemperatureSensor, LaserChamber,
   bubbleSort, selectionSort, insertionSort, mergeSort, quickSort,
-  linearSearchBelow, binarySearchByVoltage,
-  type Alert, type CalibrationState, type SimLog
+  type Alert, type SimLog
 } from '@/lib/SimulationEngine';
 
 // ============================================================
@@ -15,15 +14,13 @@ import {
 interface SensorData { photodiode: number; temperature: number; turbidity: number; }
 export interface DetectionEvent { id: number; timestamp: number; voltageDrop: number; baseline: number; severity: string; confidence: number; }
 interface AlertData { type: string; message: string; timestamp: number; priority: number; }
-interface CalibrationData { baseline: number; threshold: number; correction: number; timestamp: number; description: string; }
 interface SensorReading { timestamp: number; voltage: number; sensorType: string; valid: boolean; }
 interface SortResult { algo: string; data: { ts: number; v: number }[]; timeUs: number; }
 
 interface SystemStatus {
   pump: string; laser: string; turbidityVoltage: number; temperature: number; photodiode: number;
-  detections: number; freeHeap: number; simTime: number; sensorLogSize: number; eventHistorySize: number;
-  slidingWindowSize: number; slidingWindowCap: number; alertQueueSize: number; calibStackSize: number;
-  bstSize: number; bstHeight: number;
+  detections: number; freeHeap: number; simTime: number; sensorLogSize: number;
+  slidingWindowSize: number; slidingWindowCap: number; alertQueueSize: number;
 }
 
 type AppMode = 'demo' | 'real';
@@ -51,14 +48,11 @@ interface WSState {
   detections: DetectionEvent[];
   alerts: AlertData[];
   sensorLog: SensorReading[];
-  calibrationStack: CalibrationData[];
   sortResults: SortResult[];
   systemStatus: SystemStatus;
   voltageHistory: { ts: number; v: number }[];
   circularBuffer: { slots: SensorReading[]; capacity: number; used: number; avg: number };
-  bstData: { inorder: DetectionEvent[]; preorder: DetectionEvent[]; height: number; size: number };
   simulationProgress: { phase: string; current: number; total: number; running: boolean };
-  searchResult: { found: boolean; index: number; comparisons: number; data: SensorReading | null };
   simResults: SimSampleResult[];
   // Demo-only: direct access to the simulation engine
   engine: SimulationEngine | null;
@@ -69,24 +63,19 @@ interface WSState {
   demoSensorLogInsertHead: () => void;
   demoSensorLogDeleteFirst: () => void;
   demoSensorLogDeleteLast: () => void;
-  demoEventDeleteById: (id: number) => void;
   demoSlidingWindowAdd: (v: number) => void;
-  demoCalibPush: (b: number, t: number) => void;
-  demoCalibUndo: () => void;
   demoAlertAdd: (priority: number) => void;
   demoAlertProcessOne: () => void;
   demoAlertProcessAll: () => void;
-  demoBSTInsert: (ts: number, drop: number) => void;
-  demoBSTClear: () => void;
-  demoBSTSearch: (ts: number) => MicroplasticEvent | null;
   demoSort: (algo: string) => void;
+  togglePump: () => void;
+  toggleLaser: () => void;
 }
 
 const defaultStatus: SystemStatus = {
   pump: 'OFF', laser: 'OFF', turbidityVoltage: 0, temperature: 25, photodiode: 0,
-  detections: 0, freeHeap: 0, simTime: 0, sensorLogSize: 0, eventHistorySize: 0,
-  slidingWindowSize: 0, slidingWindowCap: 10, alertQueueSize: 0, calibStackSize: 0,
-  bstSize: 0, bstHeight: 0,
+  detections: 0, freeHeap: 0, simTime: 0, sensorLogSize: 0,
+  slidingWindowSize: 0, slidingWindowCap: 10, alertQueueSize: 0,
 };
 
 const WSContext = createContext<WSState | null>(null);
@@ -105,14 +94,11 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
   const [detections, setDetections] = useState<DetectionEvent[]>([]);
   const [alerts, setAlerts] = useState<AlertData[]>([]);
   const [sensorLog, setSensorLog] = useState<SensorReading[]>([]);
-  const [calibrationStack, setCalibrationStack] = useState<CalibrationData[]>([]);
   const [sortResults, setSortResults] = useState<SortResult[]>([]);
   const [systemStatus, setSystemStatus] = useState<SystemStatus>(defaultStatus);
   const [voltageHistory, setVoltageHistory] = useState<{ ts: number; v: number }[]>([]);
   const [circularBuffer, setCircularBuffer] = useState({ slots: [] as SensorReading[], capacity: 10, used: 0, avg: 0 });
-  const [bstData, setBstData] = useState({ inorder: [] as DetectionEvent[], preorder: [] as DetectionEvent[], height: 0, size: 0 });
   const [simulationProgress, setSimulationProgress] = useState({ phase: 'IDLE', current: 0, total: 0, running: false });
-  const [searchResult, setSearchResult] = useState({ found: false, index: -1, comparisons: 0, data: null as SensorReading | null });
   const [simResults, setSimResults] = useState<SimSampleResult[]>([]);
 
   // Demo mode: simulation engine (ported from C++ MicroplasticDetector)
@@ -124,9 +110,6 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
     const logArr = eng.sensorLog.toArray();
     setSensorLog(logArr.map(r => ({ timestamp: r.timestamp, voltage: r.voltage, sensorType: r.sensorType, valid: r.valid })));
 
-    const events = eng.eventHistory.forwardTraversal();
-    setDetections(events.map(e => ({ id: e.eventID, timestamp: e.timestamp, voltageDrop: e.voltageDrop, baseline: e.baselineVoltage, severity: e.severity, confidence: e.confidence() })));
-
     const slots = eng.slidingWindow.getSlots();
     setCircularBuffer({
       slots: slots.map(s => ({ timestamp: s.timestamp, voltage: s.voltage, sensorType: s.sensorType, valid: s.valid })),
@@ -134,18 +117,8 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
     });
 
     setAlerts(eng.alertQueue.toArray().map(a => ({ type: a.type, message: a.message, timestamp: a.timestamp, priority: a.priority })));
-    setCalibrationStack(eng.calibrationStack.toArray());
-
-    const inorder = eng.detectionTree.inorder();
-    const preorder = eng.detectionTree.preorder();
-    setBstData({
-      inorder: inorder.map(e => ({ id: e.eventID, timestamp: e.timestamp, voltageDrop: e.voltageDrop, baseline: e.baselineVoltage, severity: e.severity, confidence: e.confidence() })),
-      preorder: preorder.map(e => ({ id: e.eventID, timestamp: e.timestamp, voltageDrop: e.voltageDrop, baseline: e.baselineVoltage, severity: e.severity, confidence: e.confidence() })),
-      height: eng.detectionTree.getHeight(),
-      size: eng.detectionTree.getSize(),
-    });
-
     setSensors({ photodiode: eng.laserChamber.baseline, temperature: eng.tempSensor.temperature, turbidity: eng.turbiditySensor.voltage });
+    setVoltageHistory(logArr.map(r => ({ ts: r.timestamp, v: r.voltage })));
     setSystemStatus(eng.getStatus() as unknown as SystemStatus);
   }, []);
 
@@ -162,12 +135,15 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
   const runDemoSimulation = useCallback(async (numSamples: number) => {
     const eng = engineRef.current;
     setSimResults([]);
+    setDetections([]);
     setSimulationProgress({ phase: 'STARTING', current: 0, total: numSamples, running: true });
     await eng.runSimulation(numSamples, (log: SimLog) => {
       if (log.type === 'progress') {
         setSimulationProgress(log.data as { phase: string; current: number; total: number; running: boolean });
       } else if (log.type === 'sampleResult') {
         setSimResults(prev => [...prev, log.data as SimSampleResult]);
+      } else if (log.type === 'detection') {
+        setDetections(prev => [...prev, log.data as DetectionEvent]);
       } else if (log.type === 'sensor') {
         const d = log.data as SensorReading;
         setVoltageHistory(prev => [...prev.slice(-99), { ts: d.timestamp, v: d.voltage }]);
@@ -179,6 +155,7 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
   const resetDemoSimulation = useCallback(() => {
     engineRef.current = new SimulationEngine();
     setSimResults([]);
+    setDetections([]);
     setVoltageHistory([]);
     setSortResults([]);
     setSimulationProgress({ phase: 'IDLE', current: 0, total: 0, running: false });
@@ -210,25 +187,12 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
     syncEngineState();
   }, [syncEngineState]);
 
-  const demoEventDeleteById = useCallback((id: number) => {
-    engineRef.current.eventHistory.deleteByID(id);
-    syncEngineState();
-  }, [syncEngineState]);
-
   const demoSlidingWindowAdd = useCallback((v: number) => {
-    engineRef.current.simulationTime += 0.5;
-    engineRef.current.slidingWindow.insert(new SR(engineRef.current.simulationTime, v, 'PHOTODIODE', true));
-    syncEngineState();
-  }, [syncEngineState]);
-
-  const demoCalibPush = useCallback((b: number, t: number) => {
-    engineRef.current.simulationTime += 1;
-    engineRef.current.calibrationStack.push({ baseline: b, threshold: t, correction: 1.0, timestamp: engineRef.current.simulationTime, description: `Calibration #${engineRef.current.calibrationStack.getSize() + 1}` });
-    syncEngineState();
-  }, [syncEngineState]);
-
-  const demoCalibUndo = useCallback(() => {
-    engineRef.current.calibrationStack.undo();
+    engineRef.current.simulationTime = +(engineRef.current.simulationTime + 0.1).toFixed(1);
+    const reading = new SR(engineRef.current.simulationTime, v, 'PHOTODIODE', true);
+    engineRef.current.slidingWindow.insert(reading);
+    engineRef.current.sensorLog.append(reading);
+    setVoltageHistory(prev => [...prev.slice(-99), { ts: reading.timestamp, v: reading.voltage }]);
     syncEngineState();
   }, [syncEngineState]);
 
@@ -257,22 +221,6 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
     while (!engineRef.current.alertQueue.isEmpty()) engineRef.current.alertQueue.dequeue();
     syncEngineState();
   }, [syncEngineState]);
-
-  const demoBSTInsert = useCallback((ts: number, drop: number) => {
-    const evt = new MicroplasticEvent(ts, drop, 3.0, 2.0, 25.0);
-    engineRef.current.detectionTree.insert(evt);
-    engineRef.current.eventHistory.append(evt);
-    syncEngineState();
-  }, [syncEngineState]);
-
-  const demoBSTClear = useCallback(() => {
-    engineRef.current.detectionTree.clear();
-    syncEngineState();
-  }, [syncEngineState]);
-
-  const demoBSTSearch = useCallback((ts: number): MicroplasticEvent | null => {
-    return engineRef.current.detectionTree.search(ts);
-  }, []);
 
   const demoSort = useCallback((algo: string) => {
     const arr = engineRef.current.sensorLog.toArray();
@@ -304,13 +252,6 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
           break;
         case 'detection':
           setDetections(prev => [...prev, msg as DetectionEvent]);
-          setBstData(prev => ({
-            ...prev,
-            inorder: [...prev.inorder, msg as DetectionEvent],
-            preorder: [...prev.preorder, msg as DetectionEvent],
-            size: (prev.size || 0) + 1,
-            height: Math.max(1, Math.ceil(Math.log2((prev.size || 0) + 2))),
-          }));
           setSimResults(prev => [...prev, {
             type: 'detection',
             ts: msg.timestamp ?? Date.now() / 1000,
@@ -364,9 +305,6 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
           if (msg.slidingWindowSize !== undefined) {
             setCircularBuffer(prev => ({ ...prev, used: msg.slidingWindowSize, capacity: msg.slidingWindowCap ?? 10 }));
           }
-          if (msg.bstSize !== undefined) {
-            setBstData(prev => ({ ...prev, size: msg.bstSize, height: msg.bstHeight ?? prev.height }));
-          }
           break;
         case 'simProgress':
           if (msg.phase === 'CALIBRATING' || msg.current === 0) {
@@ -374,38 +312,11 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
           }
           setSimulationProgress(msg);
           break;
-        case 'searchResult':
-          setSearchResult(msg);
-          break;
-        case 'calibState':
-          if (msg.action === 'push') {
-            setCalibrationStack(prev => [{
-              baseline: msg.baseline ?? 3.0,
-              threshold: msg.threshold ?? 2.5,
-              correction: 1.0,
-              timestamp: msg.timestamp ?? Date.now() / 1000,
-              description: msg.desc ?? 'Hardware Snapshot'
-            }, ...prev]);
-          } else if (msg.action === 'undo') {
-            setCalibrationStack(prev => prev.slice(1));
-          }
-          break;
         case 'sensorLogAction':
           if (msg.action === 'deleteFirst') {
             setSensorLog(prev => prev.slice(1));
           } else if (msg.action === 'deleteLast') {
             setSensorLog(prev => prev.slice(0, -1));
-          }
-          break;
-        case 'eventAction':
-          if (msg.action === 'deleteById' && msg.id !== undefined) {
-            setDetections(prev => prev.filter(e => e.id !== msg.id));
-            setBstData(prev => ({
-              ...prev,
-              inorder: prev.inorder.filter(e => e.id !== msg.id),
-              preorder: prev.preorder.filter(e => e.id !== msg.id),
-              size: Math.max(0, prev.size - 1),
-            }));
           }
           break;
         case 'alertAction':
@@ -491,6 +402,30 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
     }
   }, []);
 
+  const togglePump = useCallback(() => {
+    if (mode === 'real' && connected) {
+      sendCommand({ cmd: 'pump', action: 'toggle' });
+    } else {
+      const eng = engineRef.current;
+      eng.pumpRunning = !eng.pumpRunning;
+      syncEngineState();
+    }
+  }, [mode, connected, sendCommand, syncEngineState]);
+
+  const toggleLaser = useCallback(() => {
+    if (mode === 'real' && connected) {
+      sendCommand({ cmd: 'laser', action: 'toggle' });
+    } else {
+      const eng = engineRef.current;
+      if (eng.laserChamber.laserOn) {
+        eng.laserChamber.deactivate();
+      } else {
+        eng.laserChamber.activate();
+      }
+      syncEngineState();
+    }
+  }, [mode, connected, sendCommand, syncEngineState]);
+
   // Demo mode: only stream sensor fluctuations when laser or pump is active
   useEffect(() => {
     if (mode !== 'demo') return;
@@ -513,15 +448,13 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
       mode, connected: mode === 'demo' ? true : connected,
       connecting, connectionError,
       espIp, setEspIp, connect: connectWS, disconnect, sendCommand,
-      sensors, detections, alerts, sensorLog, calibrationStack, sortResults,
-      systemStatus, voltageHistory, circularBuffer, bstData, simulationProgress,
-      searchResult, simResults, engine: engineRef.current,
+      sensors, detections, alerts, sensorLog, sortResults,
+      systemStatus, voltageHistory, circularBuffer, simulationProgress,
+      simResults, engine: engineRef.current,
       runDemoSimulation, resetDemoSimulation,
       demoSensorLogAppend, demoSensorLogInsertHead, demoSensorLogDeleteFirst, demoSensorLogDeleteLast,
-      demoEventDeleteById, demoSlidingWindowAdd,
-      demoCalibPush, demoCalibUndo,
-      demoAlertAdd, demoAlertProcessOne, demoAlertProcessAll,
-      demoBSTInsert, demoBSTClear, demoBSTSearch, demoSort,
+      demoSlidingWindowAdd, demoAlertAdd, demoAlertProcessOne, demoAlertProcessAll, demoSort,
+      togglePump, toggleLaser,
     }}>
       {children}
     </WSContext.Provider>

@@ -22,13 +22,9 @@
 #include "SensorReading.h"
 #include "MicroplasticEvent.h"
 #include "SensorLinkedList.h"
-#include "EventDoublyList.h"
 #include "CircularBuffer.h"
 #include "AlertQueue.h"
-#include "CalibrationStack.h"
-#include "DetectionBST.h"
 #include "SortingAlgorithms.h"
-#include "SearchAlgorithms.h"
 
 // ============================================================
 //  WiFi CONFIGURATION — CHANGE THESE!
@@ -44,11 +40,8 @@ bool wsClientConnected = false;
 //  GLOBAL OBJECTS (all DSA data structures)
 // ============================================================
 SensorLinkedList   sensorLog;
-EventDoublyList    eventHistory;
 CircularBuffer     slidingWindow(10);
 AlertQueue         alertQueue;
-CalibrationStack   calibrationStack;
-DetectionBST       detectionTree;
 
 float simulationTime = 0.0;
 int   currentMenu = 0;
@@ -335,25 +328,25 @@ void wsBroadcast(String json) {
     webSocket.broadcastTXT(json);
 }
 
-// Send full system status as JSON
+// Send full system status as JSON (reads real-time physical sensors)
 void wsSendStatus() {
+    float realPhotodiode = (analogRead(PHOTODIODE_PIN) / 4095.0f) * 3.3f;
+    float realTurbidity = turbiditySensor.readSensor();
+    float realTemp = tempSensor.readTemp();
+
     String json = "{\"type\":\"status\"";
     json += ",\"pump\":\"" + String(pumpController.isRunning() ? "RUNNING" : "OFF") + "\"";
     json += ",\"laser\":\"" + String(laserChamber.isOn() ? "ON" : "OFF") + "\"";
-    json += ",\"turbidityVoltage\":" + String(turbiditySensor.getVoltage(), 3);
-    json += ",\"temperature\":" + String(tempSensor.getTemperature(), 1);
-    json += ",\"photodiode\":" + String(laserChamber.getBaseline(), 3);
+    json += ",\"turbidityVoltage\":" + String(realTurbidity, 3);
+    json += ",\"temperature\":" + String(realTemp, 1);
+    json += ",\"photodiode\":" + String(realPhotodiode, 3);
     json += ",\"detections\":" + String(laserChamber.getDetectionCount());
     json += ",\"freeHeap\":" + String(ESP.getFreeHeap());
     json += ",\"simTime\":" + String(simulationTime, 1);
     json += ",\"sensorLogSize\":" + String(sensorLog.getSize());
-    json += ",\"eventHistorySize\":" + String(eventHistory.getSize());
     json += ",\"slidingWindowSize\":" + String(slidingWindow.getSize());
     json += ",\"slidingWindowCap\":" + String(slidingWindow.getCapacity());
     json += ",\"alertQueueSize\":" + String(alertQueue.getSize());
-    json += ",\"calibStackSize\":" + String(calibrationStack.getSize());
-    json += ",\"bstSize\":" + String(detectionTree.getSize());
-    json += ",\"bstHeight\":" + String(detectionTree.getHeight());
     json += "}";
     wsBroadcast(json);
 }
@@ -433,10 +426,6 @@ void handleWebSocketCommand(const String& payload) {
         float waterTemp = tempSensor.readTemp();
         float corrected = tempSensor.correctBaseline(3.0);
         laserChamber.calibrate(corrected);
-        calibrationStack.push(CalibrationState(corrected, turbiditySensor.getThreshold(),
-                                                tempSensor.getCorrectionFactor(),
-                                                simulationTime, "Initial"));
-        wsBroadcast("{\"type\":\"calibState\",\"action\":\"push\",\"baseline\":" + String(corrected, 3) + ",\"threshold\":" + String(turbiditySensor.getThreshold(), 3) + ",\"timestamp\":" + String(simulationTime, 2) + ",\"desc\":\"Initial Calibration\"}");
 
         pumpController.start();
         laserChamber.laserActivate();
@@ -467,8 +456,6 @@ void handleWebSocketCommand(const String& payload) {
                 MicroplasticEvent* event = laserChamber.analyzeReading(reading, waterTemp);
                 if (event != nullptr) {
                     detectedCount++;
-                    eventHistory.append(*event);
-                    detectionTree.insert(*event);
                     wsSendDetection(*event);
                     Alert a("INFO", "Microplastic detected!", simulationTime, 4);
                     alertQueue.enqueue(a);
@@ -531,25 +518,6 @@ void handleWebSocketCommand(const String& payload) {
         wsBroadcast(json);
         delete[] arr;
     }
-    else if (payload.indexOf("\"cmd\":\"calibrate\"") >= 0) {
-        if (payload.indexOf("\"action\":\"push\"") >= 0) {
-            int bIdx = payload.indexOf("\"baseline\":");
-            int tIdx = payload.indexOf("\"threshold\":");
-            float bv = bIdx >= 0 ? payload.substring(bIdx + 11).toFloat() : 3.0;
-            float tt = tIdx >= 0 ? payload.substring(tIdx + 12).toFloat() : 2.5;
-            simulationTime += 1.0;
-            calibrationStack.push(CalibrationState(bv, tt, 1.0, simulationTime, "Dashboard"));
-            laserChamber.setBaseline(bv);
-            turbiditySensor.setThreshold(tt);
-            wsBroadcast("{\"type\":\"calibState\",\"action\":\"push\",\"baseline\":" + String(bv, 3) + ",\"threshold\":" + String(tt, 3) + ",\"timestamp\":" + String(simulationTime, 2) + ",\"desc\":\"Dashboard Snapshot\"}");
-        } else if (payload.indexOf("\"action\":\"undo\"") >= 0) {
-            CalibrationState restored = calibrationStack.undo();
-            laserChamber.setBaseline(restored.baselineVoltage);
-            turbiditySensor.setThreshold(restored.turbidityThreshold);
-            wsBroadcast("{\"type\":\"calibState\",\"action\":\"undo\",\"baseline\":" + String(restored.baselineVoltage, 3) + ",\"threshold\":" + String(restored.turbidityThreshold, 3) + ",\"timestamp\":" + String(restored.timestamp, 2) + "}");
-        }
-        wsSendStatus();
-    }
     else if (payload.indexOf("\"cmd\":\"alertQueue\"") >= 0) {
         if (payload.indexOf("\"action\":\"processAll\"") >= 0) {
             alertQueue.processAll();
@@ -569,31 +537,14 @@ void handleWebSocketCommand(const String& payload) {
         }
         wsSendStatus();
     }
-    else if (payload.indexOf("\"cmd\":\"bst\"") >= 0) {
-        if (payload.indexOf("\"action\":\"search\"") >= 0) {
-            int tsIdx = payload.indexOf("\"ts\":");
-            float ts = tsIdx >= 0 ? payload.substring(tsIdx + 5).toFloat() : 0;
-            bool found = detectionTree.search(ts);
-            wsBroadcast("{\"type\":\"searchResult\",\"found\":" + String(found ? "true" : "false") + "}");
-        } else if (payload.indexOf("\"action\":\"insert\"") >= 0) {
-            int tsIdx = payload.indexOf("\"ts\":");
-            int dIdx = payload.indexOf("\"drop\":");
-            float ts = tsIdx >= 0 ? payload.substring(tsIdx + 5).toFloat() : simulationTime;
-            float drop = dIdx >= 0 ? payload.substring(dIdx + 7).toFloat() : 0.2;
-            MicroplasticEvent evt(ts, drop, 3.0, 2.0, 25.0);
-            detectionTree.insert(evt);
-            eventHistory.append(evt);
-            wsSendDetection(evt);
-        }
-        wsSendStatus();
-    }
     else if (payload.indexOf("\"cmd\":\"slidingWindow\"") >= 0) {
         if (payload.indexOf("\"action\":\"add\"") >= 0) {
             int vIdx = payload.indexOf("\"voltage\":");
-            float v = vIdx >= 0 ? payload.substring(vIdx + 10).toFloat() : 2.9;
+            float v = vIdx >= 0 ? payload.substring(vIdx + 10).toFloat() : ((analogRead(PHOTODIODE_PIN) / 4095.0f) * 3.3f);
             simulationTime += 0.5;
             SensorReading r(simulationTime, v, "PHOTODIODE");
             slidingWindow.insert(r);
+            sensorLog.append(r);
             wsSendSensorReading(r);
         } else if (payload.indexOf("\"action\":\"fill\"") >= 0) {
             for (int i = 0; i < 10; i++) {
@@ -601,53 +552,31 @@ void handleWebSocketCommand(const String& payload) {
                 simulationTime += 0.1;
                 SensorReading r(simulationTime, v, "PHOTODIODE");
                 slidingWindow.insert(r);
+                sensorLog.append(r);
                 wsSendSensorReading(r);
             }
         }
         wsSendStatus();
     }
-    else if (payload.indexOf("\"cmd\":\"events\"") >= 0) {
-        if (payload.indexOf("\"action\":\"add\"") >= 0) {
-            int tsIdx = payload.indexOf("\"ts\":");
-            int dIdx = payload.indexOf("\"drop\":");
-            float ts = tsIdx >= 0 ? payload.substring(tsIdx + 5).toFloat() : simulationTime;
-            float drop = dIdx >= 0 ? payload.substring(dIdx + 7).toFloat() : 0.2;
-            MicroplasticEvent evt(ts, drop, 3.0, 2.0, 25.0);
-            eventHistory.append(evt);
-            detectionTree.insert(evt);
-            wsSendDetection(evt);
-        } else if (payload.indexOf("\"action\":\"deleteById\"") >= 0) {
-            int idIdx = payload.indexOf("\"id\":");
-            int id = idIdx >= 0 ? payload.substring(idIdx + 5).toInt() : 0;
-            eventHistory.deleteByID(id);
-            wsBroadcast("{\"type\":\"eventAction\",\"action\":\"deleteById\",\"id\":" + String(id) + "}");
+    else if (payload.indexOf("\"cmd\":\"pump\"") >= 0) {
+        if (payload.indexOf("\"action\":\"start\"") >= 0 || payload.indexOf("\"action\":\"on\"") >= 0) {
+            pumpController.start();
+        } else if (payload.indexOf("\"action\":\"stop\"") >= 0 || payload.indexOf("\"action\":\"off\"") >= 0) {
+            pumpController.stop();
+        } else if (payload.indexOf("\"action\":\"toggle\"") >= 0) {
+            if (pumpController.isRunning()) pumpController.stop(); else pumpController.start();
         }
         wsSendStatus();
     }
-    else if (payload.indexOf("\"cmd\":\"search\"") >= 0) {
-        if (!sensorLog.isEmpty()) {
-            int arrSize;
-            SensorReading* arr = sensorLog.toArray(arrSize);
-            if (arr) {
-                if (payload.indexOf("\"algo\":\"linear\"") >= 0) {
-                    int tIdx = payload.indexOf("\"threshold\":");
-                    float t = tIdx >= 0 ? payload.substring(tIdx + 12).toFloat() : 2.50;
-                    int foundIdx = linearSearchByVoltage(arr, arrSize, t, true);
-                    String json = "{\"type\":\"searchResult\",\"found\":" + String(foundIdx >= 0 ? "true" : "false") +
-                                  ",\"index\":" + String(foundIdx) + ",\"comparisons\":" + String(foundIdx >= 0 ? foundIdx + 1 : arrSize) + "}";
-                    wsBroadcast(json);
-                } else if (payload.indexOf("\"algo\":\"binary\"") >= 0) {
-                    int vIdx = payload.indexOf("\"voltage\":");
-                    float v = vIdx >= 0 ? payload.substring(vIdx + 10).toFloat() : 2.50;
-                    bubbleSort(arr, arrSize);
-                    int foundIdx = binarySearchByVoltage(arr, arrSize, v);
-                    String json = "{\"type\":\"searchResult\",\"found\":" + String(foundIdx >= 0 ? "true" : "false") +
-                                  ",\"index\":" + String(foundIdx) + ",\"comparisons\":" + String(arrSize > 0 ? (int)(log(arrSize)/log(2)) + 1 : 1) + "}";
-                    wsBroadcast(json);
-                }
-                delete[] arr;
-            }
+    else if (payload.indexOf("\"cmd\":\"laser\"") >= 0) {
+        if (payload.indexOf("\"action\":\"activate\"") >= 0 || payload.indexOf("\"action\":\"on\"") >= 0) {
+            laserChamber.laserActivate();
+        } else if (payload.indexOf("\"action\":\"deactivate\"") >= 0 || payload.indexOf("\"action\":\"off\"") >= 0) {
+            laserChamber.laserDeactivate();
+        } else if (payload.indexOf("\"action\":\"toggle\"") >= 0) {
+            if (laserChamber.isOn()) laserChamber.laserDeactivate(); else laserChamber.laserActivate();
         }
+        wsSendStatus();
     }
 }
 
@@ -705,16 +634,12 @@ void displayMainMenu() {
     Serial.println("  ==========================================");
     Serial.println("   1. Run Full Detection Simulation");
     Serial.println("   2. Sensor Log (Singly Linked List)");
-    Serial.println("   3. Event History (Doubly Linked List)");
-    Serial.println("   4. Sliding Window (Circular LL)");
-    Serial.println("   5. Sorting Algorithms");
-    Serial.println("   6. Searching Algorithms");
-    Serial.println("   7. Calibration Stack");
-    Serial.println("   8. Alert Queue");
-    Serial.println("   9. Detection BST");
-    Serial.println("  10. System Status");
+    Serial.println("   3. Sliding Window (Circular LL)");
+    Serial.println("   4. Sorting Algorithms");
+    Serial.println("   5. Alert Queue");
+    Serial.println("   6. System Status");
     Serial.println("  ==========================================");
-    Serial.println("  Enter choice (1-10):");
+    Serial.println("  Enter choice (1-6):");
 }
 
 // ============================================================
@@ -731,9 +656,6 @@ void runFullSimulation() {
     tempSensor.displayStatus();
     float corrected = tempSensor.correctBaseline(3.0);
     laserChamber.calibrate(corrected);
-    calibrationStack.push(CalibrationState(corrected, turbiditySensor.getThreshold(),
-                                            tempSensor.getCorrectionFactor(),
-                                            simulationTime, "Initial"));
 
     Serial.println("\n  --- Phase 2: Pump Start ---");
     pumpController.start();
@@ -762,8 +684,6 @@ void runFullSimulation() {
         MicroplasticEvent* event = laserChamber.analyzeReading(reading, waterTemp);
         if (event != nullptr) {
             detectedCount++;
-            eventHistory.append(*event);
-            detectionTree.insert(*event);
             alertQueue.enqueue(Alert("INFO", "Microplastic detected!", simulationTime, 4));
             Serial.print("  ["); Serial.print(i + 1); Serial.print("] ");
             Serial.print("** DETECTION ** Drop: ");
@@ -792,7 +712,7 @@ void runFullSimulation() {
 }
 
 // ============================================================
-//  2-9. ALL MENUS (unchanged Serial code)
+//  2-6. SERIAL MENUS
 // ============================================================
 void sensorLogMenu() {
     Serial.println("\n  === SENSOR LOG (Singly LL) ===");
@@ -804,19 +724,6 @@ void sensorLogMenu() {
         case 3: Serial.println(sensorLog.deleteFromBeginning() ? "  Deleted." : "  Empty!"); break;
         case 4: Serial.println(sensorLog.deleteFromEnd() ? "  Deleted." : "  Empty!"); break;
         case 5: Serial.print("  Total: "); Serial.println(sensorLog.getSize()); Serial.print("  Valid: "); Serial.println(sensorLog.countValid()); break;
-    }
-    wsSendStatus();
-}
-
-void eventHistoryMenu() {
-    Serial.println("\n  === EVENTS (Doubly LL) ===");
-    Serial.println("  1. Forward  2. Reverse  3. Del by ID  4. Stats  0. Back");
-    int ch = readSerialInt();
-    switch (ch) {
-        case 1: eventHistory.displayForward(); break;
-        case 2: eventHistory.displayReverse(); break;
-        case 3: { Serial.println("  ID:"); int id = readSerialInt(); Serial.println(eventHistory.deleteByID(id) ? "  Deleted." : "  Not found!"); break; }
-        case 4: eventHistory.displayStatistics(); break;
     }
     wsSendStatus();
 }
@@ -859,36 +766,6 @@ void sortingMenu() {
     delete[] arr;
 }
 
-void searchingMenu() {
-    if (sensorLog.isEmpty()) { Serial.println("  [!] Run simulation first"); return; }
-    Serial.println("\n  === SEARCHING ===");
-    Serial.println("  1. Linear below  2. Linear ALL  3. Binary  4. Min  5. Max  0. Back");
-    int ch = readSerialInt();
-    if (ch < 1 || ch > 5) return;
-    int arrSize; SensorReading* arr = sensorLog.toArray(arrSize); if (!arr) return;
-    switch (ch) {
-        case 1: { Serial.println("  Threshold:"); float t = readSerialFloat(); linearSearchByVoltage(arr, arrSize, t, true); break; }
-        case 2: { Serial.println("  Threshold:"); float t = readSerialFloat(); linearSearchAllBreach(arr, arrSize, t); break; }
-        case 3: { Serial.println("  Target:"); float v = readSerialFloat(); mergeSortWrapper(arr, arrSize); binarySearchByVoltage(arr, arrSize, v); break; }
-        case 4: findMinVoltage(arr, arrSize); break;
-        case 5: findMaxVoltage(arr, arrSize); break;
-    }
-    delete[] arr;
-}
-
-void calibrationMenu() {
-    Serial.println("\n  === CALIBRATION STACK ===");
-    Serial.println("  1. View  2. Push  3. Undo  4. Peek  0. Back");
-    int ch = readSerialInt();
-    switch (ch) {
-        case 1: calibrationStack.display(); break;
-        case 2: { Serial.println("  Baseline:"); float bv = readSerialFloat(); Serial.println("  Threshold:"); float tt = readSerialFloat(); simulationTime += 1.0; calibrationStack.push(CalibrationState(bv, tt, 1.0, simulationTime, "Manual")); laserChamber.setBaseline(bv); turbiditySensor.setThreshold(tt); Serial.println("  Pushed!"); break; }
-        case 3: { CalibrationState r = calibrationStack.undo(); laserChamber.setBaseline(r.baselineVoltage); turbiditySensor.setThreshold(r.turbidityThreshold); break; }
-        case 4: { CalibrationState t = calibrationStack.peek(); Serial.println("  Current:"); t.display(); break; }
-    }
-    wsSendStatus();
-}
-
 void alertQueueMenu() {
     Serial.println("\n  === ALERT QUEUE ===");
     Serial.println("  1. View  2. Process all  3. Add  4. Add CRITICAL  0. Back");
@@ -898,21 +775,6 @@ void alertQueueMenu() {
         case 2: alertQueue.processAll(); break;
         case 3: { simulationTime += 0.1; alertQueue.enqueue(Alert("WARNING", "Manual test", simulationTime, 3)); Serial.println("  Added."); break; }
         case 4: { simulationTime += 0.1; alertQueue.enqueuePriority(Alert("CRITICAL", "Critical test!", simulationTime, 1)); Serial.println("  Critical added!"); break; }
-    }
-    wsSendStatus();
-}
-
-void bstMenu() {
-    Serial.println("\n  === DETECTION BST ===");
-    Serial.println("  1. Inorder  2. Preorder  3. Postorder  4. Search  5. Range  6. Info  0. Back");
-    int ch = readSerialInt();
-    switch (ch) {
-        case 1: detectionTree.displayInorder(); break;
-        case 2: detectionTree.displayPreorder(); break;
-        case 3: detectionTree.displayPostorder(); break;
-        case 4: { Serial.println("  Timestamp:"); float ts = readSerialFloat(); detectionTree.search(ts); break; }
-        case 5: { Serial.println("  Start:"); float s = readSerialFloat(); Serial.println("  End:"); float e = readSerialFloat(); detectionTree.rangeSearch(s, e); break; }
-        case 6: Serial.print("  Events: "); Serial.println(detectionTree.getSize()); Serial.print("  Height: "); Serial.println(detectionTree.getHeight()); break;
     }
     wsSendStatus();
 }
@@ -928,11 +790,8 @@ void showStatus() {
     laserChamber.displayStatus();
     Serial.println("\n  -- Data Structures --");
     Serial.print("  Sensor Log: "); Serial.println(sensorLog.getSize());
-    Serial.print("  Events:     "); Serial.println(eventHistory.getSize());
     Serial.print("  Circular:   "); Serial.print(slidingWindow.getSize()); Serial.print("/"); Serial.println(slidingWindow.getCapacity());
     Serial.print("  Queue:      "); Serial.println(alertQueue.getSize());
-    Serial.print("  Stack:      "); Serial.println(calibrationStack.getSize());
-    Serial.print("  BST:        "); Serial.print(detectionTree.getSize()); Serial.print(" (h="); Serial.print(detectionTree.getHeight()); Serial.println(")");
     Serial.print("\n  Sim Time:   "); Serial.print(simulationTime, 1); Serial.println("s");
     Serial.print("  Free Heap:  "); Serial.print(ESP.getFreeHeap()); Serial.println(" bytes");
     Serial.print("  WiFi IP:    "); Serial.println(WiFi.localIP());
@@ -1045,14 +904,10 @@ void loop() {
         switch (choice) {
             case 1:  runFullSimulation();  break;
             case 2:  sensorLogMenu();      break;
-            case 3:  eventHistoryMenu();   break;
-            case 4:  slidingWindowMenu();  break;
-            case 5:  sortingMenu();        break;
-            case 6:  searchingMenu();      break;
-            case 7:  calibrationMenu();    break;
-            case 8:  alertQueueMenu();     break;
-            case 9:  bstMenu();            break;
-            case 10: showStatus();         break;
+            case 3:  slidingWindowMenu();  break;
+            case 4:  sortingMenu();        break;
+            case 5:  alertQueueMenu();     break;
+            case 6:  showStatus();         break;
             default:
                 if (choice != 0) Serial.println("  Invalid.");
                 break;

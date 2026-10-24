@@ -4,6 +4,14 @@ Generate a publication-grade, professional 4-page technical PDF report for:
 "Low-Cost Optical Attenuation System for Real-Time Microplastic Detection"
 Department of Electronics and Instrumentation / Cyber-Physical Systems (CPS)
 Manipal Institute of Technology (MIT), Manipal
+
+Reflects the exact active project architecture:
+1. Problem Statement & Motivation
+2. Simple & Intuitive Working Principle (Physical Laser & Shadows Flow)
+3. Step-by-Step 4-Stage Operational Pipeline & Hardware Pinout
+4. Active Embedded DSA Engine & Real-Time Data Lifecycle (When Readings Arrive)
+5. Complete Bill of Materials (BOM), Parts Used & Approximate Prices
+6. Societal Impact, UN SDGs, National Missions & Final Specifications
 """
 
 import os
@@ -26,7 +34,6 @@ pdfmetrics.registerFont(TTFont('SegoeUI-Bold', 'C:/Windows/Fonts/segoeuib.ttf'))
 pdfmetrics.registerFont(TTFont('SegoeUI-Italic', 'C:/Windows/Fonts/segoeuii.ttf'))
 pdfmetrics.registerFont(TTFont('SegoeUI-SemiBold', 'C:/Windows/Fonts/seguisb.ttf'))
 
-# Register font family
 pdfmetrics.registerFontFamily(
     'SegoeUI',
     normal='SegoeUI',
@@ -63,7 +70,7 @@ class NumberedCanvas(canvas.Canvas):
 
         # Running Header on Pages 2, 3, 4
         if self._pageNumber > 1:
-            self.drawString(40, 810, "OPTICAL ATTENUATION MICROPLASTIC DETECTION SYSTEM — CPS & DSA PROJECT")
+            self.drawString(40, 810, "OPTICAL ATTENUATION MICROPLASTIC DETECTION SYSTEM — CPS & DSA REPORT")
             self.drawRightString(555, 810, "MIT MANIPAL | DEPT. OF E&I")
             self.setStrokeColor(colors.HexColor("#CBD5E1"))
             self.setLineWidth(0.5)
@@ -72,11 +79,11 @@ class NumberedCanvas(canvas.Canvas):
         # Running Footer on All Pages
         self.setStrokeColor(colors.HexColor("#E2E8F0"))
         self.setLineWidth(0.5)
-        self.line(40, 34, 555, 34)
+        self.line(40, 32, 555, 32)
 
-        self.drawString(40, 23, "Academic & Technical Evaluation Documentation | Academic Year 2026-27 | B.Tech CPS")
+        self.drawString(40, 22, "Academic & Technical Evaluation Documentation | Academic Year 2026-27 | B.Tech CPS")
         page_str = f"Page {self._pageNumber} of {page_count}"
-        self.drawRightString(555, 23, page_str)
+        self.drawRightString(555, 22, page_str)
         self.restoreState()
 
 
@@ -87,13 +94,13 @@ def generate_pdf():
         pagesize=A4,
         leftMargin=40,
         rightMargin=40,
-        topMargin=42,
-        bottomMargin=42
+        topMargin=40,
+        bottomMargin=38
     )
 
     usable_width = 595.27 - 80  # 515.27 pt
 
-    # Design Color Palette
+    # Modern Palette
     NAVY = colors.HexColor("#0F172A")
     DARK_BLUE = colors.HexColor("#1E3A8A")
     PRIMARY_BLUE = colors.HexColor("#0284C7")
@@ -108,80 +115,80 @@ def generate_pdf():
     SUCCESS_GREEN = colors.HexColor("#16A34A")
     SUCCESS_BG = colors.HexColor("#F0FDF4")
 
-    # Typography Styles
+    # Typography
     title_style = ParagraphStyle(
         'DocTitle',
         fontName='SegoeUI-Bold',
-        fontSize=18,
-        leading=22,
+        fontSize=17,
+        leading=21,
         textColor=NAVY,
-        spaceAfter=3
+        spaceAfter=2
     )
 
     subtitle_style = ParagraphStyle(
         'DocSubTitle',
         fontName='SegoeUI',
-        fontSize=9.5,
-        leading=13,
+        fontSize=9,
+        leading=12,
         textColor=PRIMARY_BLUE,
-        spaceAfter=8
+        spaceAfter=6
     )
 
     h1_style = ParagraphStyle(
         'SectionH1',
         fontName='SegoeUI-Bold',
-        fontSize=11.5,
-        leading=15,
+        fontSize=11,
+        leading=14,
         textColor=DARK_BLUE,
-        spaceBefore=8,
-        spaceAfter=4,
+        spaceBefore=7,
+        spaceAfter=3,
         keepWithNext=True
     )
 
     h2_style = ParagraphStyle(
         'SectionH2',
         fontName='SegoeUI-Bold',
-        fontSize=9.5,
-        leading=13,
+        fontSize=9,
+        leading=12,
         textColor=TEAL,
-        spaceBefore=6,
-        spaceAfter=3,
+        spaceBefore=5,
+        spaceAfter=2,
         keepWithNext=True
     )
 
     body_style = ParagraphStyle(
         'BodyDark',
         fontName='SegoeUI',
-        fontSize=8,
-        leading=11,
+        fontSize=7.8,
+        leading=10.5,
         textColor=TEXT_MAIN,
         alignment=4,  # Justified
-        spaceAfter=4
+        spaceAfter=3
     )
 
     bullet_style = ParagraphStyle(
         'BulletText',
         fontName='SegoeUI',
-        fontSize=8,
-        leading=11,
+        fontSize=7.8,
+        leading=10.5,
         textColor=TEXT_MAIN,
-        leftIndent=10,
+        leftIndent=8,
         spaceAfter=2
     )
 
     callout_style = ParagraphStyle(
         'CalloutText',
         fontName='SegoeUI',
-        fontSize=7.8,
-        leading=10.5,
+        fontSize=7.5,
+        leading=10,
         textColor=TEXT_MAIN
     )
 
     table_header_style = ParagraphStyle(
         'TableHeader',
         fontName='SegoeUI-Bold',
-        fontSize=7.5,
-        leading=9.5,
+        fontSize=7.2,
+        leading=9,
         textColor=colors.white,
         alignment=1
     )
@@ -189,16 +196,16 @@ def generate_pdf():
     table_body_style = ParagraphStyle(
         'TableBody',
         fontName='SegoeUI',
-        fontSize=7.2,
-        leading=9.5,
+        fontSize=7,
+        leading=9,
         textColor=TEXT_MAIN
     )
 
     table_body_center = ParagraphStyle(
         'TableBodyCenter',
         fontName='SegoeUI',
-        fontSize=7.2,
-        leading=9.5,
+        fontSize=7,
+        leading=9,
         textColor=TEXT_MAIN,
         alignment=1
     )
@@ -206,8 +213,8 @@ def generate_pdf():
     table_body_bold_right = ParagraphStyle(
         'TableBodyBoldRight',
         fontName='SegoeUI-Bold',
-        fontSize=7.2,
-        leading=9.5,
+        fontSize=7,
+        leading=9,
         textColor=DARK_BLUE,
         alignment=2
     )
@@ -215,26 +222,26 @@ def generate_pdf():
     story = []
 
     # ==================================================================
-    # PAGE 1: COVER HEADER, PROBLEM STATEMENT & ARCHITECTURE START
+    # PAGE 1: COVER HEADER, PROBLEM STATEMENT & SIMPLE WORKING EXPLANATION
     # ==================================================================
-    story.append(Paragraph("CYBER-PHYSICAL SYSTEMS (CPS) & EMBEDDED IoT SENSING PLATFORM", ParagraphStyle(
-        'Badge', fontName='SegoeUI-Bold', fontSize=7.5, leading=9, textColor=TEAL, spaceAfter=2
+    story.append(Paragraph("CYBER-PHYSICAL SENSING PLATFORM — EMBEDDED IoT & DSA ARCHITECTURE", ParagraphStyle(
+        'Badge', fontName='SegoeUI-Bold', fontSize=7.2, leading=9, textColor=TEAL, spaceAfter=2
     )))
     story.append(Paragraph("Low-Cost Optical Attenuation System for Real-Time Microplastic Detection", title_style))
-    story.append(Paragraph("Automated In-Line Water Quality Monitoring with Turbidity Interlock Failsafe, Thermal Drift Compensation & Live Digital Twin", subtitle_style))
-    story.append(HRFlowable(width="100%", thickness=1.5, color=DARK_BLUE, spaceBefore=0, spaceAfter=6))
+    story.append(Paragraph("Continuous In-Line Water Quality Surveillance with Turbidity Interlock Failsafe, Thermal Calibration & Live Web Digital Twin", subtitle_style))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=DARK_BLUE, spaceBefore=0, spaceAfter=5))
 
-    # Project Metadata Card
+    # Project Metadata Box
     meta_data = [
         [
             Paragraph("<b>Institution:</b> Manipal Institute of Technology (MIT), Manipal<br/>"
                       "<b>Department:</b> Department of Electronics & Instrumentation<br/>"
-                      "<b>Program:</b> B.Tech Cyber Physical Systems (CPS) | 3rd Semester<br/>"
-                      "<b>Course:</b> Data Structures & Algorithms (DSA) / CPS Theory & Lab", table_body_style),
+                      "<b>Academic Program:</b> B.Tech Cyber Physical Systems (CPS) | 3rd Semester<br/>"
+                      "<b>Subject Context:</b> Data Structures & Algorithms (DSA) / CPS Lab Project", table_body_style),
             Paragraph("<b>Project Team Members:</b><br/>"
-                      "• <b>Parth Yadav</b> (Registration ID: 251090610366)<br/>"
-                      "• <b>Anisha Praveenkumar Mandroli</b> (Registration ID: 251090610160)<br/>"
-                      "• <b>Kirtika Kushwaha</b> (Registration ID: 251090610204)<br/>"
+                      "• <b>Parth Yadav</b> (Reg ID: 251090610366)<br/>"
+                      "• <b>Anisha Praveenkumar Mandroli</b> (Reg ID: 251090610160)<br/>"
+                      "• <b>Kirtika Kushwaha</b> (Reg ID: 251090610204)<br/>"
                       "<b>Firmware & DSA Architect:</b> Akshat Awasthi", table_body_style)
         ]
     ]
@@ -243,83 +250,104 @@ def generate_pdf():
         ('BACKGROUND', (0,0), (-1,-1), BG_ALT),
         ('BOX', (0,0), (-1,-1), 0.8, BORDER_COLOR),
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('TOPPADDING', (0,0), (-1,-1), 5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
-        ('LEFTPADDING', (0,0), (-1,-1), 7),
-        ('RIGHTPADDING', (0,0), (-1,-1), 7),
+        ('TOPPADDING', (0,0), (-1,-1), 4),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+        ('LEFTPADDING', (0,0), (-1,-1), 6),
+        ('RIGHTPADDING', (0,0), (-1,-1), 6),
     ]))
     story.append(meta_table)
-    story.append(Spacer(1, 6))
+    story.append(Spacer(1, 5))
 
-    # 1. Executive Summary & Problem Statement
+    # 1. Problem Statement & Motivation
     story.append(Paragraph("1. Problem Statement & Motivation", h1_style))
     story.append(Paragraph(
-        "<b>The Global Microplastic Crisis:</b> Microplastics (plastic particles and synthetic fibers measuring &lt; 5 mm down to sub-micron dimensions) have contaminated virtually every freshwater reservoir, municipal distribution pipeline, river basin, and bottled drinking water supply globally. Emanating from synthetic textile laundering, tyre abrasion, packaging fragmentation, and industrial effluents, microplastics present acute ecological and toxicological hazards. Upon human ingestion, they induce intracellular oxidative stress, compromise gut barrier permeability, bioaccumulate across trophic food webs, and leach endocrine-disrupting additives including phthalate plasticizers and bisphenol A (BPA), while adsorbing heavy metals and pathogenic biofilms.",
+        "<b>The Microplastic Pollution Crisis:</b> Microplastics (synthetic particles and fibers &lt; 5 mm down to sub-micron dimensions) contaminate freshwater reservoirs, river basins, municipal tap water networks, and commercial bottled water. Emanating from synthetic clothing laundering, tyre wear, packaging breakdown, and industrial runoff, microplastics present severe health hazards. Once ingested, they cross biological cell barriers, induce oxidative stress, cause chronic gut inflammation, and leach toxic endocrine disruptors (phthalates, BPA) while adsorbing heavy metals and bacterial biofilms.",
         body_style
     ))
     story.append(Paragraph(
-        "<b>Fatal Bottlenecks of Existing Laboratory Methodologies:</b> Contemporary detection and characterization of microplastics rely primarily on benchtop analytical spectroscopy—notably Fourier-Transform Infrared Spectroscopy (μ-FTIR) and Raman Microspectroscopy. While scientifically rigorous, these instruments are completely unsuited for distributed, continuous in-situ monitoring: they cost between <b>$30,000 and $180,000+ (₹25,00,000 to ₹1.5 Crore INR)</b>, require specialized cleanroom facilities, demand hours of laborious chemical digestion (Fenton's reagent, enzymatic digests, or alkaline dissolution to destroy organic matter), and mandate PhD-level analytical operators. Alternatively, manual optical microscopy is subjective, unstandardized, and prone to severe human error. Consequently, point-of-use municipal plants, rural communities, and environmental agencies lack any continuous early-warning mechanism.",
+        "<b>Limitations of Existing Laboratory Equipment:</b> Conventional detection relies on benchtop spectroscopy—specifically Fourier Transform Infrared (μ-FTIR) and Raman Microspectroscopy. While highly accurate, these laboratory instruments suffer from fatal real-world drawbacks: they cost between <b>$30,000 and $180,000+ (₹25,00,000 to ₹1.5 Crore INR)</b>, require centralized cleanrooms, take hours of complex chemical sample digestion to destroy organics, and demand PhD-level analytical chemists. Conversely, manual microscope counting is slow, subjective, and error-prone. Municipal water plants and rural areas have no way to detect plastic in real time.",
         body_style
     ))
     story.append(Paragraph(
-        "<b>The Core Engineering Challenge:</b> To design, fabricate, and validate an autonomous, continuous-flow optoelectronic sensor node costing under <b>₹3,000 (~$35 USD)</b> capable of detecting microscopic plastic particulates in flowing water in real time, while decisively eliminating <i>false positive detections</i> caused by suspended mineral mud, silt, algae, and thermal optical drift.",
+        "<b>The Engineering Challenge:</b> To build a portable, automated continuous-flow instrument costing under <b>₹3,000 (~$35 USD)</b> capable of detecting microplastic particles in real time, while completely preventing <i>false positive alarms</i> caused by organic mud, sand, algae, or ambient temperature fluctuations.",
         body_style
     ))
 
-    # Objective Callout Box
-    obj_data = [
-        [Paragraph("<b>CORE PROJECT MISSION:</b> Engineer a cyber-physical edge-sensing instrument coupling multi-stage mechanical pre-filtration, an upstream turbidity interlock failsafe, thermal refractive index calibration, and high-frequency laser attenuation detection. Real-time telemetry is processed through 8 custom in-memory C++ Data Structures on an ESP32 microcontroller and streamed wirelessly to a live web Digital Twin dashboard at &gt;99.9% cost reduction compared to commercial benchtop spectrometers.", callout_style)]
+    # Problem Statement Callout Box
+    prob_box = [
+        [Paragraph("<b>CORE OBJECTIVE:</b> Deliver a fully autonomous cyber-physical edge sensor that uses optical light attenuation and smart sensor fusion to spot microscopic plastic particles in flowing water. Real-time data is processed via in-memory C++ Data Structures on an ESP32 chip and streamed live over Wi-Fi to a web dashboard at &gt;99.9% lower cost than benchtop spectrometers.", callout_style)]
     ]
-    obj_table = Table(obj_data, colWidths=[usable_width])
-    obj_table.setStyle(TableStyle([
+    prob_table = Table(prob_box, colWidths=[usable_width])
+    prob_table.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#EFF6FF")),
         ('BOX', (0,0), (-1,-1), 1, colors.HexColor("#2563EB")),
-        ('LEFTPADDING', (0,0), (-1,-1), 8),
-        ('RIGHTPADDING', (0,0), (-1,-1), 8),
-        ('TOPPADDING', (0,0), (-1,-1), 5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+        ('LEFTPADDING', (0,0), (-1,-1), 7),
+        ('RIGHTPADDING', (0,0), (-1,-1), 7),
+        ('TOPPADDING', (0,0), (-1,-1), 4),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
     ]))
-    story.append(obj_table)
-    story.append(Spacer(1, 6))
+    story.append(prob_table)
+    story.append(Spacer(1, 5))
 
-    # 2. System Architecture & Working Principle (Physics)
-    story.append(Paragraph("2. System Architecture & Working Principle", h1_style))
+    # 2. How We Detect Microplastics (Simple & Intuitive Explanation)
+    story.append(Paragraph("2. How the Detection Works (In Simple Words: Light & Shadows)", h1_style))
     story.append(Paragraph(
-        "The instrument operates on the fundamental physical principles of <b>Optical Light Attenuation and Mie/Rayleigh Scattering</b> combined with dual-sensor validation logic. Instead of requiring chemical digestion, the system measures coherent light disruption inside an optically isolated dark sensing chamber:",
+        "The system does not use expensive chemistry or destructive radiation. Instead, it works on a simple, elegant optical principle: <b>Light Attenuation & Light Scattering</b> (detecting the microscopic shadows cast by plastic particles):",
         body_style
     ))
     story.append(Paragraph(
-        "• <b>The Optical Baseline (Steady State):</b> Within a light-proof PVC dark chamber, a 650nm red laser diode continuously projects a collimated beam across a clear fluidic flow path onto a high-speed BPW34 silicon PIN photodiode. When clean, particulate-free water traverses the conduit, the photodiode receives maximum photon flux, generating a steady, high-voltage analog baseline (~3.00V – 3.20V conditioned via an LM358 operational amplifier in transimpedance configuration).<br/>"
-        "• <b>Physical Occlusion & Particle Detection:</b> When a suspended microplastic particle flows across the focal path, it refracts, reflects, and scatters a fraction of the laser light. This momentary occlusion starves the photodiode of photons, resulting in a rapid, microsecond-scale <i>V-shaped voltage dip (ΔV)</i>. The ESP32's high-speed ADC samples this line continuously at 100 Hz; the voltage drop depth correlates with particle cross-sectional area, while pulse width indicates transit velocity.<br/>"
-        "• <b>Thermal Drift Compensation:</b> Because the refractive index of water varies non-linearly with temperature (altering optical beam refraction), a submersible 1-Wire DS18B20 digital temperature sensor continuously monitors fluid temperature. The ESP32 applies an empirical mathematical offset to adjust the baseline voltage threshold dynamically.",
+        "• <b>1. The Clean Water Baseline:</b> Inside a light-proof dark box, a 650nm Red Laser continuously shoots a beam across a transparent water tube onto a sensitive Light Sensor (BPW34 Photodiode). When clean, particle-free water is flowing, the sensor receives full light and outputs a steady, high voltage (<b>~3.10 Volts</b>).<br/>"
+        "• <b>2. The Plastic Particle Passes By:</b> When a microscopic plastic fragment or fiber floats through the laser beam, it scatters and blocks the light photons for a fraction of a millisecond.<br/>"
+        "• <b>3. The Voltage Dip (The Detection Signature):</b> The light sensor momentarily receives less light, causing a sharp, microsecond-scale <b>V-shaped voltage dip</b> (e.g., dropping from 3.10V down to 2.20V before bouncing back). The ESP32 microcontroller samples this line 100 times per second: whenever it spots this quick dip, it counts: <b>+1 Microplastic Detected!</b> Deeper drops correspond to larger particles.<br/>"
+        "• <b>4. Temperature Correction:</b> Water bends light slightly differently when cold vs warm. A waterproof DS18B20 digital temperature probe continuously checks the water temperature so the ESP32 can automatically adjust the optical baseline threshold, maintaining pinpoint accuracy.",
         bullet_style
     ))
+
+    # Visual Laser/Shadow Box
+    visual_box_text = (
+        "<b>OPTICAL BEAM & VOLTAGE DIP PRINCIPLE:</b><br/>"
+        "Clean Water State:&nbsp;&nbsp;&nbsp;&nbsp;[650nm Red Laser Diode] ═══════════════════════════════════════► [Photodiode Sensor] = 3.10V (Stable Baseline)<br/>"
+        "Particle Crossing:&nbsp;&nbsp;&nbsp;&nbsp;[650nm Red Laser Diode] ═════════► [🔴 Plastic Particle] ──────────► [Photodiode Sensor] = 2.15V (Sharp V-Dip Detected!)"
+    )
+    visual_table = Table([[Paragraph(visual_box_text, table_body_style)]], colWidths=[usable_width])
+    visual_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), BG_ALT),
+        ('BOX', (0,0), (-1,-1), 1, TEAL),
+        ('LEFTPADDING', (0,0), (-1,-1), 7),
+        ('RIGHTPADDING', (0,0), (-1,-1), 7),
+        ('TOPPADDING', (0,0), (-1,-1), 4),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+    ]))
+    story.append(visual_table)
 
     # End of Page 1
     story.append(PageBreak())
 
     # ==================================================================
-    # PAGE 2: OPERATIONAL WORKFLOW, FLOW DIAGRAM & DSA ARCHITECTURE
+    # PAGE 2: PHYSICAL PIPELINE, FAILSAFE LOGIC & MASTER PINOUT
     # ==================================================================
-    story.append(Paragraph("2. System Architecture & Working Principle (Continued)", h1_style))
-    story.append(Paragraph("Chronological 4-Phase Operational Pipeline", h2_style))
+    story.append(Paragraph("3. Step-by-Step Physical Pipeline & Failsafe Architecture", h1_style))
+    story.append(Paragraph(
+        "To guarantee that real-world mud, silt, and algae do not trigger false detections, fluid moves through a strict 4-phase physical pipeline before optical scanning occurs:",
+        body_style
+    ))
 
     pipeline_data = [
         [
-            Paragraph("<b>Phase 1: Boot & Thermal Baseline Calibration</b>", table_body_style),
-            Paragraph("ESP32 initializes peripherals, establishes 2.4 GHz Wi-Fi link, launches a WebSocket telemetry server on Port 81, and queries the DS18B20 1-Wire temperature probe. Fluid temperature is logged to mathematically normalize the optical baseline before fluid actuation commences.", table_body_style)
+            Paragraph("<b>Stage 1: Mechanical Pre-Filtration</b>", table_body_style),
+            Paragraph("The ESP32 switches an optocoupled relay to start the 5V Peristaltic Pump. The pump draws water smoothly from the sample cup without any impeller contact. Fluid passes through an inline 40–100 μm mesh filter (fuel filter) that mechanically traps large sand grains, grit, pebbles, and organic leaves while allowing water and microplastics to pass straight through.", table_body_style)
         ],
         [
-            Paragraph("<b>Phase 2: Actuation & Stage 1 Pre-Filtration</b>", table_body_style),
-            Paragraph("The operator triggers 'Start Flow' via the web dashboard. The ESP32 energizes GPIO 26 to close the 5V optocoupled relay, driving the 5V Peristaltic Pump. Fluid is drawn without contacting motor impellers. Water passes through an inline 40–100 μm mesh filter, mechanically capturing heavy gravel, sand grains, and filamentous algae while letting microplastics and water pass through.", table_body_style)
+            Paragraph("<b>Stage 2: The Mud Check (Turbidity Failsafe)</b>", table_body_style),
+            Paragraph("<b>The Crucial Hardware Hack:</b> If the water contains suspended mud or silt, it would block the laser continuously and produce thousands of fake plastic counts. Filtered water flows past an Analog Turbidity Sensor. If voltage is LOW (&lt; 2.5V, muddy water), the ESP32 <b>instantly cuts the pump relay and locks the counter</b>. Optical counting is strictly allowed ONLY when water clarity is verified (≥ 2.5V).", table_body_style)
         ],
         [
-            Paragraph("<b>Phase 3: Upstream Turbidity Failsafe Interlock</b>", table_body_style),
-            Paragraph("<b>Hardware-Software Interlock:</b> Muddy or silty water causes broad optical attenuation that would falsely register millions of microplastics. Pre-filtered water enters the Analog Turbidity Sensor. If voltage is LOW (&lt; 2.5V, high turbidity), the ESP32 instantly de-energizes the pump relay, halts optical counting, and broadcasts a critical alarm. Optical detection is ONLY enabled when water clarity is validated (≥ 2.5V).", table_body_style)
+            Paragraph("<b>Stage 3: Core Optical Dark Chamber</b>", table_body_style),
+            Paragraph("Clear, validated water enters the light-sealed PVC Dark Chamber. The 650nm laser beam illuminates the flow tube. Microplastic particles scatter the beam, creating microsecond light dips caught by the BPW34 photodiode. An LM358 operational amplifier amplifies the faint current into a clean 0–3.3V analog signal fed into the ESP32 ADC.", table_body_style)
         ],
         [
-            Paragraph("<b>Phase 4: Optical Chamber & Digital Twin Sync</b>", table_body_style),
-            Paragraph("Validated water enters the light-sealed PVC Dark Chamber. The 650nm laser beam illuminates the stream. Microplastics trigger microsecond voltage drops registered by the BPW34 photodiode and buffered by the LM358 op-amp. The ESP32 classifies event severity (Low, Medium, High, Critical), logs events into in-memory DSA structures, pushes JSON telemetry over WebSockets to the Next.js dashboard, and discharges analyzed water to the waste beaker.", table_body_style)
+            Paragraph("<b>Stage 4: IoT Digital Twin Web Sync</b>", table_body_style),
+            Paragraph("The ESP32 processes the voltage dip, rates its severity, increments the microplastic tally, and streams live telemetry (voltages, temperature, counts, alerts) over Wi-Fi WebSockets (Port 81) to the Next.js web dashboard. The analyzed fluid exits safely into a waste beaker.", table_body_style)
         ]
     ]
     pipeline_table = Table(pipeline_data, colWidths=[135, 380])
@@ -329,89 +357,179 @@ def generate_pdf():
         ('BOX', (0,0), (-1,-1), 0.8, BORDER_COLOR),
         ('INNERGRID', (0,0), (-1,-1), 0.5, BORDER_COLOR),
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('TOPPADDING', (0,0), (-1,-1), 3.5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 3.5),
-        ('LEFTPADDING', (0,0), (-1,-1), 6),
-        ('RIGHTPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 3),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+        ('LEFTPADDING', (0,0), (-1,-1), 5),
+        ('RIGHTPADDING', (0,0), (-1,-1), 5),
     ]))
     story.append(pipeline_table)
     story.append(Spacer(1, 5))
 
-    # Architecture Visual Schematic Box
-    arch_box_text = (
-        "<b>INTEGRATED FLUIDIC & CYBER-PHYSICAL TELEMETRY SCHEMATIC:</b><br/>"
-        "Sample Reservoir ➔ [5V Peristaltic Pump (Relay GPIO 26)] ➔ [Inline 40–100 µm Mesh Filter] ➔ [Analog Turbidity (GPIO 34)]<br/>"
-        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ (Turbidity Interlock: V ≥ 2.5V? YES ➔ Proceed | NO ➔ Trip Pump & Alert)<br/>"
-        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br/>"
-        "[PVC Dark Chamber: 650nm Laser (GPIO 27) ➔ Flow Channel ➔ BPW34 Photodiode + LM358 Op-Amp (GPIO 35)] ➔ [Waste Beaker Outlet]<br/>"
-        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ (High-Speed Analog Voltage Sampling @ 100 Hz)<br/>"
-        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br/>"
-        "[ESP32 Edge Microcontroller: In-Memory DSA Core Engine] ➔ [WiFi WebSocket / Port 81] ➔ [Next.js Cloud Digital Twin Dashboard]"
+    # Architecture Flow Box
+    flow_text = (
+        "<b>COMPLETE SYSTEM FLUID & DATA FLOWCHART:</b><br/>"
+        "Sample Beaker ➔ [5V Peristaltic Pump (Relay GPIO 26)] ➔ [Inline 40–100 µm Mesh Filter] ➔ [Turbidity Sensor (GPIO 34) + Temp (GPIO 4)]<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ (Turbidity OK? YES ➔ Proceed | NO ➔ Emergency Pump Trip & Flag Alert)<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br/>"
+        "[PVC Dark Chamber: 650nm Laser (GPIO 27) ➔ Flow Tube ➔ BPW34 Photodiode + LM358 Op-Amp (GPIO 35)] ➔ [Waste Beaker Outlet]<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ (Microsecond Analog ADC Voltage Sampling @ 100 Hz)<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br/>"
+        "[ESP32 Edge Controller: Active C++ DSA Pipeline] ➔ [Wi-Fi WebSocket / Port 81] ➔ [Next.js Cloud Digital Twin Dashboard]"
     )
-    arch_table = Table([[Paragraph(arch_box_text, table_body_style)]], colWidths=[usable_width])
-    arch_table.setStyle(TableStyle([
+    flow_table = Table([[Paragraph(flow_text, table_body_style)]], colWidths=[usable_width])
+    flow_table.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), BG_ALT),
-        ('BOX', (0,0), (-1,-1), 1, TEAL),
-        ('LEFTPADDING', (0,0), (-1,-1), 7),
-        ('RIGHTPADDING', (0,0), (-1,-1), 7),
-        ('TOPPADDING', (0,0), (-1,-1), 5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+        ('BOX', (0,0), (-1,-1), 1, DARK_BLUE),
+        ('LEFTPADDING', (0,0), (-1,-1), 6),
+        ('RIGHTPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 4),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
     ]))
-    story.append(arch_table)
-    story.append(Spacer(1, 6))
+    story.append(flow_table)
+    story.append(Spacer(1, 5))
 
-    # 3. Embedded Data Structures & Algorithms Engine
-    story.append(Paragraph("3. Embedded Data Structures & Algorithms (DSA) Engine", h1_style))
+    # 4. Master Hardware Pinout Table
+    story.append(Paragraph("4. Master Hardware Pinout & Circuit Interfacing", h1_style))
     story.append(Paragraph(
-        "A central academic highlight of this system is the implementation of <b>eight custom-built Data Structures and Algorithms</b> in native C++ executing entirely within the ESP32's internal SRAM (without relying on bulky STL containers or dynamic vector overhead). Every structure was selected to fulfill a critical real-time sensory or control requirement:",
+        "All hardware components wire directly to the ESP32 DevKit using dedicated low-noise ADC1 channels and isolated digital outputs:",
         body_style
     ))
 
-    dsa_data = [
-        [Paragraph("Data Structure / Algorithm", table_header_style), Paragraph("Algorithmic Implementation & Complexity", table_header_style), Paragraph("Cyber-Physical Utility & Hardware Mapping", table_header_style)],
+    pin_data = [
+        [Paragraph("Hardware Component", table_header_style), Paragraph("Component Pins", table_header_style), Paragraph("ESP32 Pin", table_header_style), Paragraph("Voltage", table_header_style), Paragraph("Interfacing Role & Circuit Notes", table_header_style)],
         [
-            Paragraph("<b>Singly Linked List</b>", table_body_style),
-            Paragraph("Dynamic node pointers (`Node* next`). Head/tail insertion: <i>O(1)</i>, index traversal: <i>O(n)</i>.", table_body_style),
-            Paragraph("Unbounded chronological logging of raw sensor telemetry (photodiode voltage, turbidity NTU, temp).", table_body_style)
+            Paragraph("<b>Turbidity Sensor</b>", table_body_style),
+            Paragraph("Analog OUT (A0)<br/>VCC / GND", table_body_style),
+            Paragraph("<b>GPIO 34</b><br/>VIN (5V) / GND", table_body_style),
+            Paragraph("0 – 3.3V<br/>5.0V DC", table_body_style),
+            Paragraph("ADC1_CH6 input (safe during active Wi-Fi). Checks water clarity; triggers emergency pump trip if voltage &lt; 2.5V.", table_body_style)
         ],
         [
-            Paragraph("<b>Doubly Linked List</b>", table_body_style),
-            Paragraph("Bidirectional pointers (`next`, `prev`). Forward & backward traversal: <i>O(n)</i>, node removal: <i>O(1)</i>.", table_body_style),
-            Paragraph("Incident investigation: allows an operator to navigate backward from a detection alarm to examine precursor conditions.", table_body_style)
+            Paragraph("<b>BPW34 Photodiode</b>", table_body_style),
+            Paragraph("Signal (LM358 Pin 1)<br/>VCC / GND", table_body_style),
+            Paragraph("<b>GPIO 35</b><br/>3V3 / GND", table_body_style),
+            Paragraph("0 – 3.3V<br/>3.3V DC", table_body_style),
+            Paragraph("ADC1_CH7 input. Buffered by LM358 op-amp in transimpedance topology with 100kΩ gain. Reads 3.1V baseline.", table_body_style)
         ],
         [
-            Paragraph("<b>Circular Linked List</b>", table_body_style),
-            Paragraph("Ring buffer (capacity 10) with `tail->next = head`. Rolling window compute: <i>O(1)</i>.", table_body_style),
-            Paragraph("Real-time sliding window moving average filter: continuously suppresses photodiode high-frequency optical noise.", table_body_style)
+            Paragraph("<b>DS18B20 Temp Probe</b>", table_body_style),
+            Paragraph("Data (Yellow)<br/>VCC (Red) / GND (Black)", table_body_style),
+            Paragraph("<b>GPIO 4</b><br/>3V3 / GND", table_body_style),
+            Paragraph("3.3V Logic<br/>3.3V DC", table_body_style),
+            Paragraph("1-Wire digital thermometer with 4.7kΩ pull-up resistor to 3.3V rail. Calibrates baseline for thermal refractive index shifts.", table_body_style)
         ],
         [
-            Paragraph("<b>Stack (LIFO)</b>", table_body_style),
-            Paragraph("Node-based LIFO stack supporting `push()`, `pop()`, `peek()`, and rollback: <i>O(1)</i>.", table_body_style),
-            Paragraph("Sensor baseline calibration rollback (Undo/Redo): saves multi-stage baseline offsets and allows instant reversion.", table_body_style)
+            Paragraph("<b>1-Channel Relay</b>", table_body_style),
+            Paragraph("IN (Signal)<br/>VCC / GND", table_body_style),
+            Paragraph("<b>GPIO 26</b><br/>VIN (5V) / GND", table_body_style),
+            Paragraph("3.3V Logic<br/>5.0V DC", table_body_style),
+            Paragraph("Optocoupled input. Switched by ESP32 to safely control the 5V peristaltic pump motor power contacts.", table_body_style)
         ],
         [
-            Paragraph("<b>Queue & Priority Queue</b>", table_body_style),
-            Paragraph("FIFO queue with priority insertion: safety alarms preempt normal packets to head in <i>O(p)</i>.", table_body_style),
-            Paragraph("Critical alarm management: safety-critical trips (Turbidity cutoff, pump overheat) jump ahead of routine telemetry.", table_body_style)
-        ],
-        [
-            Paragraph("<b>Binary Search Tree (BST)</b>", table_body_style),
-            Paragraph("Timestamp-keyed BST. Search/Insert: <i>O(log n)</i> avg. In-Order, Pre-Order, Post-Order traversals.", table_body_style),
-            Paragraph("Rapid event lookup by microsecond timestamp and range queries (retrieve all events detected between T1 and T2).", table_body_style)
-        ],
-        [
-            Paragraph("<b>5 Sorting Algorithms</b>", table_body_style),
-            Paragraph("Bubble, Selection, Insertion <i>O(n²)</i>, Merge Sort <i>O(n log n)</i>, Quick Sort (Lomuto).", table_body_style),
-            Paragraph("Hardware-benchmarked via ESP32 `micros()` hardware timer to rank detection events by severity and optical dip magnitude.", table_body_style)
-        ],
-        [
-            Paragraph("<b>2 Searching Algorithms</b>", table_body_style),
-            Paragraph("Linear Search <i>O(n)</i> versus Binary Search <i>O(log n)</i> with telemetry step count.", table_body_style),
-            Paragraph("Evaluates algorithmic execution performance on embedded microcontroller during historical event lookup queries.", table_body_style)
+            Paragraph("<b>650nm Laser Diode</b>", table_body_style),
+            Paragraph("Anode (+) / Cathode (-)", table_body_style),
+            Paragraph("<b>GPIO 27</b> / GND", table_body_style),
+            Paragraph("3.3V DC / 0V", table_body_style),
+            Paragraph("Switched by digital output; energized continuously inside the dark chamber during active interrogation cycles.", table_body_style)
         ]
     ]
-    dsa_table = Table(dsa_data, colWidths=[105, 170, 240])
-    dsa_table.setStyle(TableStyle([
+    pin_table = Table(pin_data, colWidths=[90, 100, 75, 55, 195])
+    pin_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), TEAL),
+        ('BOX', (0,0), (-1,-1), 0.8, BORDER_COLOR),
+        ('INNERGRID', (0,0), (-1,-1), 0.5, BORDER_COLOR),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, BG_ALT]),
+        ('VALIGN', (0,0), (-1,-1), 'TOP'),
+        ('TOPPADDING', (0,0), (-1,-1), 2.5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 2.5),
+        ('LEFTPADDING', (0,0), (-1,-1), 4),
+        ('RIGHTPADDING', (0,0), (-1,-1), 4),
+    ]))
+    story.append(pin_table)
+
+    # End of Page 2
+    story.append(PageBreak())
+
+    # ==================================================================
+    # PAGE 3: ACTIVE DSA ARCHITECTURE & DATA FLOW WHEN READINGS ARRIVE
+    # ==================================================================
+    story.append(Paragraph("5. Embedded DSA Engine: What Happens When Readings Arrive", h1_style))
+    story.append(Paragraph(
+        "To ensure deterministic execution on the ESP32 with zero heap fragmentation, the project implements a clean, active DSA pipeline written in pure C++ without heavy STL dependencies. Here is the exact data lifecycle when a sensor reading is captured:",
+        body_style
+    ))
+
+    # DSA Flow Diagram
+    dsa_flow_text = (
+        "<b>DATA LIFECYCLE WHEN A READING ARRIVES:</b><br/>"
+        "[ Physical Sensor Reading (GPIO 35) ] ── (Analog Voltage Sampling @ 100 Hz)<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>1. SensorReading.h</b> ── Packages data into an immutable capsule (timestamp, voltage, type)<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;┌───────────────────┴───────────────────┐<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>2. SensorLinkedList.h</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>3. CircularBuffer.h</b><br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Singly LL: Appends to permanent log)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(10-node ring: Rolling moving avg filter)<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│ (Computes rolling baseline)<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└───────────────────┬───────────────────┘<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>4. MicroplasticEvent.h</b> ── Dip detected? Calculates drop % & severity (LOW/MED/HIGH)<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>5. AlertQueue.h</b> ───────── Normal alert = FIFO tail | Critical mud/trip = Jump to HEAD!<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;│<br/>"
+        "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>6. SortingAlgorithms.h</b> ── Sorts events by particle size & benchmarks ESP32 micros()"
+    )
+    dsa_flow_table = Table([[Paragraph(dsa_flow_text, table_body_style)]], colWidths=[usable_width])
+    dsa_flow_table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), BG_ALT),
+        ('BOX', (0,0), (-1,-1), 1, TEAL),
+        ('LEFTPADDING', (0,0), (-1,-1), 6),
+        ('RIGHTPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 4),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+    ]))
+    story.append(dsa_flow_table)
+    story.append(Spacer(1, 5))
+
+    # Detailed Step-by-Step Breakdown of Active DSA Files
+    story.append(Paragraph("Detailed Breakdown of Active DSA Components", h2_style))
+
+    dsa_breakdown_data = [
+        [Paragraph("Active DSA Component & File", table_header_style), Paragraph("How It Works When Data Arrives", table_header_style), Paragraph("Real-World Hardware Purpose", table_header_style)],
+        [
+            Paragraph("<b>1. SensorReading.h</b><br/>(Data Encapsulation)", table_body_style),
+            Paragraph("The instant an analog pin is sampled, this class packages `timestamp`, `voltage`, and `sensorType` into a single immutable object.", table_body_style),
+            Paragraph("Prevents loose floating variables in ESP32 memory and standardizes data format for all data structures and WebSocket packets.", table_body_style)
+        ],
+        [
+            Paragraph("<b>2. SensorLinkedList.h</b><br/>(Singly Linked List)", table_body_style),
+            Paragraph("Calls `sensorLog.append(reading)`: dynamically allocates a `SensorNode` and links it to `tail->next` in strictly **$O(1)$** time.", table_body_style),
+            Paragraph("<b>Unbounded Timeline:</b> Fixed arrays (`float arr[100]`) overflow or waste RAM. The linked list grows node-by-node during continuous water testing.", table_body_style)
+        ],
+        [
+            Paragraph("<b>3. CircularBuffer.h</b><br/>(Circular Linked List)", table_body_style),
+            Paragraph("A 10-node ring where `tail->next = head`. New readings overwrite the oldest slot. Computes rolling average in **$O(1)$** time.", table_body_style),
+            Paragraph("<b>Optical Noise Filter:</b> Water waves cause voltage jitter. The circular buffer tracks the rolling baseline so true particle drops stand out clearly.", table_body_style)
+        ],
+        [
+            Paragraph("<b>4. MicroplasticEvent.h</b><br/>(Particle Evaluator)", table_body_style),
+            Paragraph("Calculates drop magnitude: `drop = baseline - voltage`. If `drop ≥ 0.15V`, evaluates severity: Low (&lt;15%), Medium (15-30%), High (&gt;30%).", table_body_style),
+            Paragraph("Translates raw physical voltage drops into tangible environmental metrics (particle size category and contamination confidence).", table_body_style)
+        ],
+        [
+            Paragraph("<b>5. AlertQueue.h</b><br/>(Queue & Priority Queue)", table_body_style),
+            Paragraph("• Normal detection: `enqueue()` adds to the back of the line.<br/>• Emergency mud trip: `enqueuePriority()` jumps straight to the **HEAD**!", table_body_style),
+            Paragraph("<b>Failsafe Protection:</b> If turbidity spikes, the emergency alarm preempts normal logs, cutting relay power immediately before false counts occur.", table_body_style)
+        ],
+        [
+            Paragraph("<b>6. SortingAlgorithms.h</b><br/>(5 Sorting Algorithms)", table_body_style),
+            Paragraph("Implements Bubble, Selection, Insertion ($O(n^2)$), Merge, and Quick Sort ($O(n \log n)$). Measures ESP32 hardware timer (`micros()`).", table_body_style),
+            Paragraph("<b>Severity Ranking & Benchmarking:</b> Sorts plastic events to show the biggest particles first, proving how Quick Sort (~38µs) beats Bubble Sort (~290µs).", table_body_style)
+        ]
+    ]
+    dsa_breakdown_table = Table(dsa_breakdown_data, colWidths=[120, 195, 200])
+    dsa_breakdown_table.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), DARK_BLUE),
         ('BOX', (0,0), (-1,-1), 0.8, BORDER_COLOR),
         ('INNERGRID', (0,0), (-1,-1), 0.5, BORDER_COLOR),
@@ -422,17 +540,17 @@ def generate_pdf():
         ('LEFTPADDING', (0,0), (-1,-1), 4),
         ('RIGHTPADDING', (0,0), (-1,-1), 4),
     ]))
-    story.append(dsa_table)
+    story.append(dsa_breakdown_table)
 
-    # End of Page 2
+    # End of Page 3
     story.append(PageBreak())
 
     # ==================================================================
-    # PAGE 3: BILL OF MATERIALS (BOM) & COMPONENT PRICING
+    # PAGE 4: BILL OF MATERIALS (BOM), PRICES, SDGS & CONCLUSION
     # ==================================================================
-    story.append(Paragraph("4. Bill of Materials (BOM), Parts Used & Approximate Prices", h1_style))
+    story.append(Paragraph("6. Bill of Materials (BOM), Parts Used & Approximate Prices", h1_style))
     story.append(Paragraph(
-        "A foundational imperative of this project is <b>radical affordability and democratic accessibility</b>. All components selected are non-proprietary, industrially mature, and readily procurable from electronic distributors across India (Robu.in, Quartzcomponents, local electronics markets) and internationally. The table below delineates every physical component, engineering rating, functional responsibility, and estimated retail market price in both Indian Rupees (₹ INR) and US Dollars ($ USD) at prevailing 2026 exchange rates (~₹83.5 / $1 USD):",
+        "All components are commercially standard and procurable from local electronics retailers (Robu.in, Quartzcomponents) and international vendors. Estimated retail prices in Indian Rupees (₹ INR) and US Dollars ($ USD at ~₹83.5 / $1) are itemized below:",
         body_style
     ))
 
@@ -610,118 +728,44 @@ def generate_pdf():
         ('BACKGROUND', (0,-1), (-1,-1), colors.HexColor("#E2E8F0")),
         ('LINEABOVE', (0,-1), (-1,-1), 1.2, DARK_BLUE),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('TOPPADDING', (0,0), (-1,-1), 2),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
+        ('TOPPADDING', (0,0), (-1,-1), 1.8),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 1.8),
         ('LEFTPADDING', (0,0), (-1,-1), 3),
         ('RIGHTPADDING', (0,0), (-1,-1), 3),
     ]))
     story.append(bom_table)
-    story.append(Spacer(1, 5))
+    story.append(Spacer(1, 4))
 
     # Economic Comparison Box
     econ_box = [
         [
-            Paragraph("<b>ECONOMIC DISRUPTION & COMPARATIVE COST ADVANTAGE:</b><br/>"
-                      "• <b>Gold-Standard Benchtop Instruments (μ-FTIR / Raman Microscopes):</b> <b>₹25,00,000 to ₹1,50,00,000+ ($30,000 – $180,000 USD)</b>. Require air-conditioned labs, liquid nitrogen detector cooling, expensive chemical reagents, and specialized personnel.<br/>"
-                      "• <b>Our Optical Attenuation Edge Prototype:</b> <b>₹2,445 INR (~$29.30 USD)</b>. Yields a <b>&gt;99.9% cost reduction</b>, operates on 5V USB/battery, provides autonomous pre-filtration and turbidity rejection, and streams live telemetry to a cloud Digital Twin.<br/>"
-                      "• <b>Scalability:</b> Low capital expenditure allows mass deployment across municipal water filtration plants, river monitoring outposts, rural drinking wells, and academic research institutions.", callout_style)
+            Paragraph("<b>ECONOMIC DISRUPTION & COST BENEFIT ANALYSIS:</b> "
+                      "• <b>Commercial Benchtop Systems (μ-FTIR / Raman Microscopes):</b> <b>₹25,00,000 to ₹1,50,00,000+ ($30,000 – $180,000 USD)</b>. Require laboratory cleanrooms, liquid nitrogen detector cooling, and chemical sample digestion.<br/>"
+                      "• <b>Our Optical Attenuation Edge Prototype:</b> <b>₹2,445 INR (~$29.30 USD)</b>. Yields a <b>&gt;99.9% cost reduction</b>, operates on 5V USB power, provides automated turbidity rejection, and streams live telemetry to a cloud Digital Twin.", callout_style)
         ]
     ]
     econ_table = Table(econ_box, colWidths=[usable_width])
     econ_table.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), SUCCESS_BG),
         ('BOX', (0,0), (-1,-1), 1, SUCCESS_GREEN),
-        ('LEFTPADDING', (0,0), (-1,-1), 8),
-        ('RIGHTPADDING', (0,0), (-1,-1), 8),
-        ('TOPPADDING', (0,0), (-1,-1), 4),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
+        ('LEFTPADDING', (0,0), (-1,-1), 6),
+        ('RIGHTPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 3.5),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3.5),
     ]))
     story.append(econ_table)
-    story.append(Spacer(1, 6))
+    story.append(Spacer(1, 5))
 
-    # Master Hardware Pinout Table
-    story.append(Paragraph("5. Master Hardware Pinout & Interfacing Specifications", h1_style))
-    pin_data = [
-        [Paragraph("Component", table_header_style), Paragraph("Component Pin", table_header_style), Paragraph("ESP32 Pin", table_header_style), Paragraph("Voltage", table_header_style), Paragraph("Hardware Conditioning & Interfacing Notes", table_header_style)],
-        [
-            Paragraph("<b>Turbidity Sensor</b>", table_body_style),
-            Paragraph("Signal (A0)<br/>VCC / GND", table_body_style),
-            Paragraph("<b>GPIO 34</b><br/>VIN (5V) / GND", table_body_style),
-            Paragraph("0 – 3.3V<br/>5.0V DC", table_body_style),
-            Paragraph("ADC1_CH6 input (safe when WiFi is transmitting; ADC2 is shared with Wi-Fi RF). Turbidity interlock trips below 2.5V.", table_body_style)
-        ],
-        [
-            Paragraph("<b>BPW34 Photodiode</b>", table_body_style),
-            Paragraph("Signal (LM358 Pin 1)<br/>VCC / GND", table_body_style),
-            Paragraph("<b>GPIO 35</b><br/>3V3 / GND", table_body_style),
-            Paragraph("0 – 3.3V<br/>3.3V DC", table_body_style),
-            Paragraph("ADC1_CH7 input. Buffered by LM358 operational amplifier in transimpedance topology with 100kΩ feedback resistor.", table_body_style)
-        ],
-        [
-            Paragraph("<b>DS18B20 Temp Probe</b>", table_body_style),
-            Paragraph("Data (Yellow)<br/>VCC (Red) / GND (Black)", table_body_style),
-            Paragraph("<b>GPIO 4</b><br/>3V3 / GND", table_body_style),
-            Paragraph("3.3V Logic<br/>3.3V DC", table_body_style),
-            Paragraph("Bit-banged 1-Wire protocol with 4.7kΩ external pull-up resistor to 3.3V rail. Sampled during boot calibration.", table_body_style)
-        ],
-        [
-            Paragraph("<b>1-Channel Relay</b>", table_body_style),
-            Paragraph("IN (Trigger)<br/>VCC / GND", table_body_style),
-            Paragraph("<b>GPIO 26</b><br/>VIN (5V) / GND", table_body_style),
-            Paragraph("3.3V Logic<br/>5.0V DC", table_body_style),
-            Paragraph("Optocoupled input. Switched by ESP32 to drive the 5V peristaltic pump motor power contacts safely.", table_body_style)
-        ],
-        [
-            Paragraph("<b>650nm Laser Diode</b>", table_body_style),
-            Paragraph("Anode (+) / Cathode (-)", table_body_style),
-            Paragraph("<b>GPIO 27</b> / GND", table_body_style),
-            Paragraph("3.3V DC / 0V", table_body_style),
-            Paragraph("Switched by ESP32 digital output; energized during active optical interrogation cycles inside dark chamber.", table_body_style)
-        ]
-    ]
-    pin_table = Table(pin_data, colWidths=[90, 100, 75, 55, 195])
-    pin_table.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), TEAL),
-        ('BOX', (0,0), (-1,-1), 0.8, BORDER_COLOR),
-        ('INNERGRID', (0,0), (-1,-1), 0.5, BORDER_COLOR),
-        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, BG_ALT]),
-        ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('TOPPADDING', (0,0), (-1,-1), 2.5),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 2.5),
-        ('LEFTPADDING', (0,0), (-1,-1), 4),
-        ('RIGHTPADDING', (0,0), (-1,-1), 4),
-    ]))
-    story.append(pin_table)
-    story.append(Spacer(1, 8))
-
-    # ==================================================================
-    # SECTION 6, 7 & 8: SOCIETAL IMPACT, SDGS, SYSTEM SPECS & CONCLUSION
-    # ==================================================================
-    story.append(Paragraph("6. Societal Impact, UN Sustainable Development Goals & National Missions", h1_style))
-    story.append(Paragraph(
-        "This project directly addresses pressing ecological imperatives and aligns with established international standards and Indian national missions for water security:",
-        body_style
-    ))
-
+    # 7. Societal Impact, SDGs & National Missions
+    story.append(Paragraph("7. Societal Impact, UN SDGs & National Initiatives", h1_style))
     impact_data = [
         [
-            Paragraph("<b>Societal & Environmental Benefits:</b><br/>"
-                      "• <b>Public Health Preservation:</b> Detects synthetic plastic fibers in tap and drinking water supplies before human consumption, preventing chronic ingestion hazards.<br/>"
-                      "• <b>Democratized Environmental Sensing:</b> Sub-₹3,000 cost enables schools, universities, NGOs, and rural health clinics to monitor local drinking sources autonomously.<br/>"
-                      "• <b>Continuous Aquatic Surveillance:</b> Replaces intermittent manual grab-sampling with uninterrupted 24/7 automated continuous-flow analysis.", table_body_style),
-            Paragraph("<b>Alignment with UN Sustainable Development Goals (SDGs):</b><br/>"
-                      "• <b>SDG 6 (Clean Water & Sanitation):</b> Directly enhances water quality monitoring and targets synthetic micro-pollutant reduction.<br/>"
-                      "• <b>SDG 9 (Industry, Innovation & Infrastructure):</b> Pioneers affordable, open cyber-physical IoT infrastructure for resource-limited regions.<br/>"
-                      "• <b>SDG 14 (Life Below Water):</b> Mitigates plastic contaminant ingress into aquatic habitats, safeguarding freshwater and marine biodiversity.", table_body_style)
+            Paragraph("<b>Societal Benefits:</b> Early detection of plastic fibers in municipal water; sub-₹3,000 cost empowers citizen science, schools, and NGOs.", table_body_style),
+            Paragraph("<b>UN SDGs Alignment:</b> <b>SDG 6</b> (Clean Water & Sanitation), <b>SDG 9</b> (Innovation & Infrastructure), <b>SDG 14</b> (Life Below Water).", table_body_style)
         ],
         [
-            Paragraph("<b>Alignment with Indian National Initiatives:</b><br/>"
-                      "• <b>Jal Jeevan Mission (JJM):</b> Fulfills JJM's core mandate of ensuring verifiable, safe piped drinking water to every rural household via affordable field testing.<br/>"
-                      "• <b>Namami Gange Programme:</b> Serves as an affordable continuous monitoring node to assess microplastic pollution density across Ganga basin tributaries.<br/>"
-                      "• <b>Swachh Bharat Mission:</b> Provides empirical, data-driven validation for plastic waste remediation and solid waste management initiatives.", table_body_style),
-            Paragraph("<b>Scalability & Future Research Directions:</b><br/>"
-                      "• <b>Multi-Wavelength Spectroscopy:</b> Integrating UV (405nm), Green (532nm), and NIR (850nm) lasers to categorize polymer types (PET vs PE vs PP) via differential light absorption ratios.<br/>"
-                      "• <b>TinyML Edge Particle Classification:</b> Deploying quantized neural network models directly on ESP32 to differentiate fibers, fragments, and beads from signal shape.", table_body_style)
+            Paragraph("<b>Indian National Missions:</b> <b>Jal Jeevan Mission (JJM)</b> for decentralized tap water testing; <b>Namami Gange</b> for river basin monitoring.", table_body_style),
+            Paragraph("<b>Future Scope:</b> Multi-wavelength optical arrays (UV 405nm, Green 532nm) for polymer classification; TinyML edge neural networks on ESP32.", table_body_style)
         ]
     ]
     impact_table = Table(impact_data, colWidths=[255, 260])
@@ -730,72 +774,54 @@ def generate_pdf():
         ('BOX', (0,0), (-1,-1), 0.8, BORDER_COLOR),
         ('INNERGRID', (0,0), (-1,-1), 0.5, BORDER_COLOR),
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('TOPPADDING', (0,0), (-1,-1), 4),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
-        ('LEFTPADDING', (0,0), (-1,-1), 6),
-        ('RIGHTPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 3),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 3),
+        ('LEFTPADDING', (0,0), (-1,-1), 5),
+        ('RIGHTPADDING', (0,0), (-1,-1), 5),
     ]))
     story.append(impact_table)
-    story.append(Spacer(1, 6))
+    story.append(Spacer(1, 4))
 
-    # 7. Technical Conclusion & System Specifications
-    story.append(Paragraph("7. Technical Specifications & Experimental Conclusion", h1_style))
-    story.append(Paragraph(
-        "The Low-Cost Optical Attenuation System proves that effective microplastic detection does not necessitate multi-million rupee laboratory instrumentation. By coupling mechanical pre-filtration, upstream turbidity interlocks, thermal refractive calibration, and 8 custom in-memory C++ Data Structures inside an ESP32 microcontroller, the device achieves dependable particle identification at a bill-of-materials cost of only <b>₹2,445 INR (~$29.30 USD)</b>. Real-time WebSocket streaming synchronizes physical events with an interactive web Digital Twin, delivering a validated, deployable cyber-physical solution for environmental protection.",
-        body_style
-    ))
-
+    # 8. Technical Specifications & References Summary
+    story.append(Paragraph("8. Technical Specifications & References", h1_style))
     specs_data = [
-        [Paragraph("<b>Parameter</b>", table_header_style), Paragraph("<b>Specification / Value</b>", table_header_style), Paragraph("<b>Parameter</b>", table_header_style), Paragraph("<b>Specification / Value</b>", table_header_style)],
+        [Paragraph("<b>Parameter</b>", table_header_style), Paragraph("<b>Specification</b>", table_header_style), Paragraph("<b>Parameter</b>", table_header_style), Paragraph("<b>Specification</b>", table_header_style)],
         [
-            Paragraph("Microcontroller Core", table_body_style), Paragraph("ESP32 (240MHz Dual-Core, 520KB SRAM)", table_body_style),
-            Paragraph("Fluidic Actuator", table_body_style), Paragraph("5V DC Peristaltic Metering Pump", table_body_style)
+            Paragraph("MCU Core", table_body_style), Paragraph("ESP32 (240MHz, 520KB SRAM)", table_body_style),
+            Paragraph("Fluid Actuation", table_body_style), Paragraph("5V DC Peristaltic Pump", table_body_style)
         ],
         [
-            Paragraph("Optical Light Source", table_body_style), Paragraph("650nm Red Laser Diode (5mW Dot)", table_body_style),
-            Paragraph("Pre-Filtration Mesh", table_body_style), Paragraph("40–100 μm Mesh (Traps sand/mud)", table_body_style)
+            Paragraph("Light Source", table_body_style), Paragraph("650nm Red Laser (5mW Dot)", table_body_style),
+            Paragraph("Pre-Filter", table_body_style), Paragraph("40–100 μm Mesh (Traps sand)", table_body_style)
         ],
         [
-            Paragraph("Photodetector", table_body_style), Paragraph("BPW34 PIN Photodiode (7.5 mm²)", table_body_style),
-            Paragraph("Turbidity Interlock", table_body_style), Paragraph("Analog Turbidity Probe (Trip &lt; 2.5V)", table_body_style)
+            Paragraph("Photodetector", table_body_style), Paragraph("BPW34 PIN Photodiode (7.5mm²)", table_body_style),
+            Paragraph("Turbidity Interlock", table_body_style), Paragraph("Analog Probe (Trip &lt; 2.5V)", table_body_style)
         ],
         [
-            Paragraph("Signal Conditioning", table_body_style), Paragraph("LM358 Op-Amp (Transimpedance Gain)", table_body_style),
-            Paragraph("Thermal Compensation", table_body_style), Paragraph("DS18B20 1-Wire Probe (±0.5°C accuracy)", table_body_style)
-        ],
-        [
-            Paragraph("Sampling Frequency", table_body_style), Paragraph("100 Hz continuous ADC polling", table_body_style),
-            Paragraph("Telemetry Protocol", table_body_style), Paragraph("802.11 b/g/n Wi-Fi + WebSocket (Port 81)", table_body_style)
-        ],
-        [
-            Paragraph("Embedded DSA Engine", table_body_style), Paragraph("8 in-memory C++ structures (zero STL)", table_body_style),
-            Paragraph("Approx. Total Cost", table_body_style), Paragraph("<b>₹2,445 INR (~$29.30 USD)</b>", table_body_style)
+            Paragraph("Sampling Rate", table_body_style), Paragraph("100 Hz continuous ADC polling", table_body_style),
+            Paragraph("Total Cost", table_body_style), Paragraph("<b>₹2,445 INR (~$29.30 USD)</b>", table_body_style)
         ]
     ]
-    specs_table = Table(specs_data, colWidths=[120, 137, 120, 138])
+    specs_table = Table(specs_data, colWidths=[110, 147, 110, 148])
     specs_table.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), DARK_BLUE),
         ('BOX', (0,0), (-1,-1), 0.8, BORDER_COLOR),
         ('INNERGRID', (0,0), (-1,-1), 0.5, BORDER_COLOR),
         ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, BG_ALT]),
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('TOPPADDING', (0,0), (-1,-1), 2),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 2),
-        ('LEFTPADDING', (0,0), (-1,-1), 4),
-        ('RIGHTPADDING', (0,0), (-1,-1), 4),
+        ('TOPPADDING', (0,0), (-1,-1), 1.8),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 1.8),
+        ('LEFTPADDING', (0,0), (-1,-1), 3),
+        ('RIGHTPADDING', (0,0), (-1,-1), 3),
     ]))
     story.append(specs_table)
-    story.append(Spacer(1, 5))
+    story.append(Spacer(1, 3))
 
     # Academic References
-    story.append(Paragraph("8. Key References & Technical Standards", h1_style))
     story.append(Paragraph(
-        "1. <b>Department of Drinking Water and Sanitation</b>, Ministry of Jal Shakti, Government of India, <i>Jal Jeevan Mission Guidelines & Water Quality Testing Protocols</i>. https://jaljeevanmission.gov.in/<br/>"
-        "2. <b>National Mission for Clean Ganga (NMCG)</b>, Ministry of Jal Shakti, <i>Namami Gange River Pollution Monitoring Framework</i>. https://nmcg.nic.in/<br/>"
-        "3. <b>United Nations</b>, <i>Transforming our world: The 2030 Agenda for Sustainable Development (SDGs 6, 9 & 14)</i>. https://sdgs.un.org/goals<br/>"
-        "4. <b>Espressif Systems</b>, <i>ESP32 Technical Reference Manual & FreeRTOS Dual-Core Architecture</i>, Espressif Systems Inc., 2024.<br/>"
-        "5. <b>ISO/TR 21960:2020</b>, <i>Plastics — Environmental aspects — State of knowledge and methodologies for microplastics</i>, International Organization for Standardization.",
-        ParagraphStyle('RefText', fontName='SegoeUI', fontSize=6.8, leading=9, textColor=TEXT_MUTED)
+        "<b>References:</b> 1. Jal Jeevan Mission Guidelines, Ministry of Jal Shakti. 2. Namami Gange River Pollution Framework, NMCG. 3. UN SDGs 6, 9 & 14. 4. Espressif ESP32 Technical Reference. 5. ISO/TR 21960:2020 Plastics Microplastics Methodologies.",
+        ParagraphStyle('RefText', fontName='SegoeUI', fontSize=6.5, leading=8.5, textColor=TEXT_MUTED)
     ))
 
     # Build Document

@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useWS } from '@/context/WebSocketContext';
 import {
   LayoutDashboard, Play, List, ArrowLeftRight, Circle, ArrowUpDown,
-  Search, Layers, Bell, GitBranch, Cpu, Activity, Wifi, WifiOff, Loader
+  Search, Layers, Bell, GitBranch, Cpu, Activity, Wifi, WifiOff, Loader, Database
 } from 'lucide-react';
 
 interface NavItem {
@@ -56,7 +56,7 @@ export default function Sidebar() {
     {
       section: 'ALGORITHMS',
       items: [
-        { href: '/sorting', icon: ArrowUpDown, label: 'Sorting Algorithms', count: 5 },
+        { href: '/sorting', icon: ArrowUpDown, label: 'Quick Sort', count: 1 },
       ],
     },
   ];

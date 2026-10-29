@@ -36,7 +36,7 @@ export default function TopCommandBar() {
     '/sensor-log': 'Sensor Log',
     '/sliding-window': 'Sliding Window',
     '/alerts': 'Alert Queue',
-    '/sorting': 'Sorting Algorithms',
+    '/sorting': 'Quick Sort',
   };
 
   const currentTitle = pageNames[pathname] || 'Dashboard';

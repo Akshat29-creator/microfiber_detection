@@ -1,6 +1,7 @@
 # 🖥️ Main Menu & Function Architecture Guide
 ### Microplastic Detection System — Cyber-Physical DSA Implementation
-**Author:** Akshat Awasthi | **Institution:** MIT Manipal | **Dept:** B.Tech Cyber-Physical Systems (CPS)
+**Author & Lead:** Kirtika Kushwaha | **Institution:** MIT Manipal | **Dept:** B.Tech Cyber-Physical Systems (CPS)  
+**Team Members:** Kirtika Kushwaha (251090610204), Parth Yadav (251090610366), Anisha Praveenkumar Mandroli (251090610160)  
 
 ---
 

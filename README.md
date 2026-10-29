@@ -2,10 +2,14 @@
 
 ### A Cyber-Physical System & Data Structures and Algorithms (DSA) Implementation
 
-**Author:** Akshat Awasthi
-**Institution:** Manipal Institute of Technology (MIT), Manipal
-**Department:** B.Tech Cyber Physical Systems (CPS) | 3rd Semester
-**Course Context:** Data Structures and Algorithms (DSA) Lab & Theory Project
+**Author & Lead:** Kirtika Kushwaha (Reg ID: 251090610204)  
+**Project Team Members:**
+- **Kirtika Kushwaha** (Reg ID: 251090610204) — Firmware & DSA Architect
+- **Parth Yadav** (Reg ID: 251090610366)
+- **Anisha Praveenkumar Mandroli** (Reg ID: 251090610160)  
+**Institution:** Manipal Institute of Technology (MIT), Manipal  
+**Department:** B.Tech Cyber Physical Systems (CPS) | 3rd Semester  
+**Course Context:** Data Structures and Algorithms (DSA) Lab & Theory Project  
 
 ---
 

@@ -5,7 +5,8 @@
 **Target Microcontroller:** ESP32 (NodeMCU-32S / ESP32 Dev Module / DOIT DevKit V1)  
 **Firmware Platform:** Arduino IDE (v2.0 or higher) — C++ Pointer Engine  
 **Frontend Platform:** Next.js 16 (React 19, TypeScript, Tailwind CSS v4, Framer Motion, Recharts)  
-**Author:** Akshat Awasthi | B.Tech Cyber Physical Systems (CPS) | MIT Manipal  
+**Author & Lead:** Kirtika Kushwaha | B.Tech Cyber Physical Systems (CPS) | MIT Manipal  
+**Team Members:** Kirtika Kushwaha (251090610204), Parth Yadav (251090610366), Anisha Praveenkumar Mandroli (251090610160)  
 
 ---
 

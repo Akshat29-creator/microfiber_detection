@@ -391,11 +391,19 @@ void wsSendSensorData() {
     float realPhotodiode = (analogRead(PHOTODIODE_PIN) / 4095.0f) * 3.3f;
     float realTurbidity = turbiditySensor.readSensor();
     float realTemp = tempSensor.readTemp();
+    float curTs = millis() / 1000.0f;
+
+    // Save live hardware reading into Singly Linked List sensorLog
+    SensorReading r(curTs, realPhotodiode, "PHOTODIODE");
+    r.setValid(realTurbidity >= 2.50f);
+    sensorLog.append(r);
+    slidingWindow.insert(r);
+
     String json = "{\"type\":\"sensor\"";
     json += ",\"photodiode\":" + String(realPhotodiode, 3);
     json += ",\"temperature\":" + String(realTemp, 1);
     json += ",\"turbidity\":" + String(realTurbidity, 3);
-    json += ",\"ts\":" + String(millis() / 1000.0f, 2);
+    json += ",\"ts\":" + String(curTs, 2);
     json += "}";
     wsBroadcast(json);
 }
@@ -474,7 +482,20 @@ void handleWebSocketCommand(const String& payload) {
         wsSendStatus();
     }
     else if (payload.indexOf("\"cmd\":\"sensorLog\"") >= 0) {
-        if (payload.indexOf("\"action\":\"add\"") >= 0) {
+        if (payload.indexOf("\"action\":\"dump\"") >= 0 || payload.indexOf("\"action\":\"getAll\"") >= 0) {
+            SensorNode* cur = sensorLog.getHead();
+            while (cur != nullptr) {
+                wsSendSensorReading(cur->data);
+                cur = cur->next;
+                delay(2);
+                webSocket.loop();
+            }
+        } else if (payload.indexOf("\"action\":\"clear\"") >= 0) {
+            while (!sensorLog.isEmpty()) {
+                sensorLog.deleteFromBeginning();
+            }
+            wsBroadcast("{\"type\":\"sensorLogAction\",\"action\":\"clear\"}");
+        } else if (payload.indexOf("\"action\":\"add\"") >= 0) {
             int tsIdx = payload.indexOf("\"ts\":");
             int vIdx = payload.indexOf("\"voltage\":");
             float ts = tsIdx >= 0 ? payload.substring(tsIdx + 5).toFloat() : simulationTime;

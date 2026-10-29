@@ -14,7 +14,15 @@ import {
 interface SensorData { photodiode: number; temperature: number; turbidity: number; }
 export interface DetectionEvent { id: number; timestamp: number; voltageDrop: number; baseline: number; severity: string; confidence: number; }
 interface AlertData { type: string; message: string; timestamp: number; priority: number; }
-interface SensorReading { timestamp: number; voltage: number; sensorType: string; valid: boolean; }
+export interface SensorReading {
+  timestamp: number;
+  voltage: number;
+  sensorType: string;
+  valid: boolean;
+  dateStr?: string;
+  wallClockTime?: string;
+  recordedAt?: string;
+}
 interface SortResult { algo: string; data: { ts: number; v: number }[]; timeUs: number; }
 
 interface SystemStatus {
@@ -68,6 +76,7 @@ interface WSState {
   demoAlertProcessOne: () => void;
   demoAlertProcessAll: () => void;
   demoSort: (algo: string) => void;
+  clearSensorLog: () => void;
   togglePump: () => void;
   toggleLaser: () => void;
 }
@@ -93,13 +102,30 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
   const [sensors, setSensors] = useState<SensorData>({ photodiode: 0, temperature: 25, turbidity: 0 });
   const [detections, setDetections] = useState<DetectionEvent[]>([]);
   const [alerts, setAlerts] = useState<AlertData[]>([]);
-  const [sensorLog, setSensorLog] = useState<SensorReading[]>([]);
+  const [sensorLog, setSensorLog] = useState<SensorReading[]>(() => {
+    if (typeof window !== 'undefined' && mode === 'real') {
+      try {
+        const saved = localStorage.getItem('microdetect_real_sensor_log');
+        if (saved) return JSON.parse(saved);
+      } catch { /* ignore */ }
+    }
+    return [];
+  });
   const [sortResults, setSortResults] = useState<SortResult[]>([]);
   const [systemStatus, setSystemStatus] = useState<SystemStatus>(defaultStatus);
   const [voltageHistory, setVoltageHistory] = useState<{ ts: number; v: number }[]>([]);
   const [circularBuffer, setCircularBuffer] = useState({ slots: [] as SensorReading[], capacity: 10, used: 0, avg: 0 });
   const [simulationProgress, setSimulationProgress] = useState({ phase: 'IDLE', current: 0, total: 0, running: false });
   const [simResults, setSimResults] = useState<SimSampleResult[]>([]);
+
+  // Persist sensor log in real mode whenever readings arrive
+  useEffect(() => {
+    if (typeof window !== 'undefined' && mode === 'real') {
+      try {
+        localStorage.setItem('microdetect_real_sensor_log', JSON.stringify(sensorLog));
+      } catch { /* ignore */ }
+    }
+  }, [sensorLog, mode]);
 
   // Demo mode: simulation engine (ported from C++ MicroplasticDetector)
   const engineRef = useRef<SimulationEngine>(new SimulationEngine());
@@ -108,7 +134,18 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
   const syncEngineState = useCallback(() => {
     const eng = engineRef.current;
     const logArr = eng.sensorLog.toArray();
-    setSensorLog(logArr.map(r => ({ timestamp: r.timestamp, voltage: r.voltage, sensorType: r.sensorType, valid: r.valid })));
+    const nowStr = new Date().toLocaleTimeString('en-US', { hour12: false });
+    const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const isoStr = new Date().toISOString();
+    setSensorLog(logArr.map(r => ({
+      timestamp: r.timestamp,
+      voltage: r.voltage,
+      sensorType: r.sensorType,
+      valid: r.valid,
+      dateStr: dateStr,
+      wallClockTime: nowStr,
+      recordedAt: isoStr,
+    })));
 
     const slots = eng.slidingWindow.getSlots();
     setCircularBuffer({
@@ -245,11 +282,53 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
   const handleMessage = useCallback((event: MessageEvent) => {
     try {
       const msg = JSON.parse(event.data);
+      const currentTimeStr = new Date().toLocaleTimeString('en-US', { hour12: false });
+      const currentDateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      const currentIso = new Date().toISOString();
+
       switch (msg.type) {
-        case 'sensor':
-          setSensors({ photodiode: msg.photodiode ?? 0, temperature: msg.temperature ?? 25, turbidity: msg.turbidity ?? 0 });
-          if (msg.photodiode) setVoltageHistory(prev => [...prev.slice(-99), { ts: msg.ts ?? Date.now() / 1000, v: msg.photodiode }]);
+        case 'sensor': {
+          const pVoltage = msg.photodiode ?? 0;
+          const tVoltage = msg.turbidity ?? 0;
+          const tempVal = msg.temperature ?? 25;
+          const tsVal = msg.ts ?? +(Date.now() / 1000).toFixed(1);
+
+          setSensors({ photodiode: pVoltage, temperature: tempVal, turbidity: tVoltage });
+          if (pVoltage > 0) {
+            setVoltageHistory(prev => [...prev.slice(-99), { ts: tsVal, v: pVoltage }]);
+
+            // When testing with hardware: record every sensor reading into sensorLog with date & time
+            const readingItem: SensorReading = {
+              timestamp: tsVal,
+              voltage: pVoltage,
+              sensorType: 'PHOTODIODE',
+              valid: tVoltage >= 2.50,
+              dateStr: currentDateStr,
+              wallClockTime: currentTimeStr,
+              recordedAt: currentIso,
+            };
+
+            setSensorLog(prev => {
+              // Avoid exact duplicate at the exact same sub-second timestamp
+              if (prev.length > 0 && Math.abs(prev[prev.length - 1].timestamp - tsVal) < 0.05) {
+                return prev;
+              }
+              return [...prev, readingItem];
+            });
+
+            setCircularBuffer(prev => {
+              const nextSlots = [...prev.slots, readingItem].slice(-10);
+              const avg = nextSlots.reduce((sum, r) => sum + r.voltage, 0) / (nextSlots.length || 1);
+              return {
+                ...prev,
+                slots: nextSlots,
+                used: nextSlots.length,
+                avg,
+              };
+            });
+          }
           break;
+        }
         case 'detection':
           setDetections(prev => [...prev, msg as DetectionEvent]);
           setSimResults(prev => [...prev, {
@@ -269,11 +348,25 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
             priority: msg.priority ?? 4,
           }, ...prev].slice(0, 50));
           break;
-        case 'sensorReading':
-          setSensorLog(prev => [...prev, msg as SensorReading]);
-          setVoltageHistory(prev => [...prev.slice(-99), { ts: msg.timestamp, v: msg.voltage }]);
+        case 'sensorReading': {
+          const recReading: SensorReading = {
+            timestamp: msg.timestamp ?? +(Date.now() / 1000).toFixed(1),
+            voltage: msg.voltage ?? 0,
+            sensorType: msg.sensorType ?? 'PHOTODIODE',
+            valid: msg.valid !== false,
+            dateStr: msg.dateStr || currentDateStr,
+            wallClockTime: msg.wallClockTime || currentTimeStr,
+            recordedAt: msg.recordedAt || currentIso,
+          };
+          setSensorLog(prev => {
+            if (prev.some(p => p.timestamp === recReading.timestamp && p.voltage === recReading.voltage)) {
+              return prev;
+            }
+            return [...prev, recReading];
+          });
+          setVoltageHistory(prev => [...prev.slice(-99), { ts: recReading.timestamp, v: recReading.voltage }]);
           setCircularBuffer(prev => {
-            const nextSlots = [...prev.slots, msg as SensorReading].slice(-10);
+            const nextSlots = [...prev.slots, recReading].slice(-10);
             const avg = nextSlots.reduce((sum, r) => sum + r.voltage, 0) / (nextSlots.length || 1);
             return {
               ...prev,
@@ -296,6 +389,7 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
             }]);
           }
           break;
+        }
         case 'sortResult':
           setSortResults(prev => [...prev, msg as SortResult]);
           break;
@@ -317,6 +411,8 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
             setSensorLog(prev => prev.slice(1));
           } else if (msg.action === 'deleteLast') {
             setSensorLog(prev => prev.slice(0, -1));
+          } else if (msg.action === 'clear') {
+            setSensorLog([]);
           }
           break;
         case 'alertAction':
@@ -367,7 +463,9 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
         setConnected(true);
         setConnecting(false);
         setConnectionError('');
+        // Request status and all stored hardware sensor logs from ESP32
         ws.send(JSON.stringify({ cmd: 'status' }));
+        ws.send(JSON.stringify({ cmd: 'sensorLog', action: 'dump' }));
       };
       ws.onclose = () => {
         setConnected(false);
@@ -401,6 +499,18 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
       wsRef.current.send(JSON.stringify(cmd));
     }
   }, []);
+
+  const clearSensorLog = useCallback(() => {
+    setSensorLog([]);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('microdetect_real_sensor_log');
+      } catch { /* ignore */ }
+    }
+    if (mode === 'real' && connected) {
+      sendCommand({ cmd: 'sensorLog', action: 'clear' });
+    }
+  }, [connected, mode, sendCommand]);
 
   const togglePump = useCallback(() => {
     if (mode === 'real' && connected) {
@@ -454,6 +564,7 @@ export function WebSocketProvider({ children, mode }: { children: React.ReactNod
       runDemoSimulation, resetDemoSimulation,
       demoSensorLogAppend, demoSensorLogInsertHead, demoSensorLogDeleteFirst, demoSensorLogDeleteLast,
       demoSlidingWindowAdd, demoAlertAdd, demoAlertProcessOne, demoAlertProcessAll, demoSort,
+      clearSensorLog,
       togglePump, toggleLaser,
     }}>
       {children}

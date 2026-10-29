@@ -110,9 +110,6 @@ export default function SlidingWindowPage() {
           <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             Sliding Window
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-            10-sample rolling window for real-time sensor smoothing and optical noise filtering
-          </p>
         </div>
         <span className={`badge ${mode === 'real' ? (connected ? 'badge-green' : 'badge-red') : 'badge-cyan'}`}>
           {mode === 'real' ? (connected ? 'Hardware Connected' : 'Hardware Offline') : 'Demo Mode Active'}
@@ -167,7 +164,6 @@ export default function SlidingWindowPage() {
         <div className="card-header">
           <div>
             <div className="card-title">Rolling Window Controls</div>
-            <div className="card-subtitle">Push voltage readings into the 10-slot circular buffer</div>
           </div>
         </div>
 
@@ -205,7 +201,6 @@ export default function SlidingWindowPage() {
         <div className="card-header">
           <div>
             <div className="card-title">Rolling Buffer Slots (10 Slots)</div>
-            <div className="card-subtitle">Each new sample replaces the oldest slot in continuous circular rotation</div>
           </div>
           <span className="badge badge-cyan">{used}/10 slots active</span>
         </div>
@@ -262,9 +257,6 @@ export default function SlidingWindowPage() {
         <div className="card-header">
           <div>
             <div className="card-title">Live Noise Suppression Waveform</div>
-            <div className="card-subtitle">
-              Real-time plot of actual sensor voltage vs 10-slot circular buffer moving average
-            </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span className="badge badge-cyan">{waveformData.length} Active Points</span>
@@ -305,7 +297,7 @@ export default function SlidingWindowPage() {
                 <Legend wrapperStyle={{ fontSize: 11, paddingTop: 6 }} />
                 <ReferenceLine y={2.50} stroke="#f43f5e" strokeDasharray="4 4" label={{ value: '2.50V Drop Threshold', fill: '#f43f5e', fontSize: 10 }} />
                 <Line type="monotone" dataKey="raw" stroke="#f59e0b" strokeWidth={1.5} dot={{ r: 3 }} name="Raw Sensor Signal (With Flutter)" isAnimationActive={false} />
-                <Line type="monotone" dataKey="filtered" stroke="#06b6d4" strokeWidth={2.5} dot={{ r: 3 }} name="Sliding Window (Filtered Output)" isAnimationActive={false} />
+                <Line type="monotone" dataKey="filtered" stroke="#2dd4bf" strokeWidth={2.5} dot={{ r: 3 }} name="Sliding Window (Filtered Output)" isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>

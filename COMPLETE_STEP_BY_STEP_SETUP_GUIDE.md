@@ -2,7 +2,8 @@
 
 **Project:** Microplastic Detection & Water Environmental Analysis System
 **Subject:** Cyber-Physical Systems (CPS) & Data Structures and Algorithms (DSA)
-**Author:** Akshat Awasthi | B.Tech Cyber Physical Systems (CPS) | MIT Manipal
+**Author & Lead:** Kirtika Kushwaha | B.Tech Cyber Physical Systems (CPS) | MIT Manipal
+**Team Members:** Kirtika Kushwaha (251090610204), Parth Yadav (251090610366), Anisha Praveenkumar Mandroli (251090610160)
 **Target Hardware:** ESP32 DevKit V1 / NodeMCU-32S
 **Target Software:** Next.js 16 (Node.js LTS), Arduino IDE 2.x, WebSocket Telemetry (Port 81)
 
@@ -621,4 +622,4 @@ Once connected, run this quick check to verify the entire cyber-physical pipelin
 
 ---
 
-*Authored by **Akshat Awasthi** | B.Tech Cyber Physical Systems (CPS) | MIT Manipal*
+*Authored by **Kirtika Kushwaha** | B.Tech Cyber Physical Systems (CPS) | MIT Manipal*

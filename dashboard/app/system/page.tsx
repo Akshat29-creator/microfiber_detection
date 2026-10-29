@@ -49,9 +49,6 @@ export default function SystemPage() {
         <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
           System Diagnostics
         </h1>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-          Hardware health telemetry, GPIO relay actuation, sensor streams, and embedded SRAM allocation
-        </p>
       </div>
 
       {mode === 'real' && !connected && (
@@ -133,7 +130,6 @@ export default function SystemPage() {
           <div className="card-header">
             <div>
               <div className="card-title">Hardware Components</div>
-              <div className="card-subtitle">Actuator states & sensor ADC readings</div>
             </div>
             {connected && (
               <button className="btn btn-secondary" style={{ fontSize: 12, padding: '4px 10px' }} onClick={() => sendCommand({ cmd: 'status' })}>
@@ -164,7 +160,6 @@ export default function SystemPage() {
           <div className="card-header">
             <div>
               <div className="card-title">Voltage History</div>
-              <div className="card-subtitle">Continuous photodiode voltage stream</div>
             </div>
             <span className="badge badge-blue">{voltageHistory.length} samples</span>
           </div>
@@ -174,15 +169,15 @@ export default function SystemPage() {
               <AreaChart data={displayVoltageHistory}>
                 <defs>
                   <linearGradient id="sysGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#06b6d4" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#2dd4bf" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#2dd4bf" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
                 <XAxis dataKey="ts" tick={false} axisLine={false} />
                 <YAxis domain={[1.8, 3.6]} tick={{ fill: '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} unit="V" />
                 <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, fontSize: 12 }} />
-                <Area type="monotone" dataKey="v" stroke="#06b6d4" fill="url(#sysGrad)" strokeWidth={2} dot={false} />
+                <Area type="monotone" dataKey="v" stroke="#2dd4bf" fill="url(#sysGrad)" strokeWidth={2} dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -194,7 +189,6 @@ export default function SystemPage() {
         <div className="card-header">
           <div>
             <div className="card-title">Data Structure Memory Allocation</div>
-            <div className="card-subtitle">In-memory C++ structures tracking sensor states and detections</div>
           </div>
         </div>
 
@@ -225,7 +219,6 @@ export default function SystemPage() {
         <div className="card-header">
           <div>
             <div className="card-title">ESP32 GPIO Pin Assignment</div>
-            <div className="card-subtitle">Microcontroller hardware peripheral wiring</div>
           </div>
         </div>
 

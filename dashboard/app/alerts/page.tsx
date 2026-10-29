@@ -54,9 +54,6 @@ export default function AlertsPage() {
           <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             Alert Queue
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-            Real-time queue managing system warnings, failsafes, and critical hardware cutoff alerts
-          </p>
         </div>
         <span className={`badge ${mode === 'real' ? (connected ? 'badge-green' : 'badge-red') : 'badge-cyan'}`}>
           {mode === 'real' ? (connected ? 'Hardware Connected' : 'Hardware Offline') : 'Demo Mode Active'}
@@ -109,7 +106,6 @@ export default function AlertsPage() {
         <div className="card-header">
           <div>
             <div className="card-title">Queue Actions</div>
-            <div className="card-subtitle">Manage pending alerts or simulate test events</div>
           </div>
         </div>
 
@@ -147,7 +143,7 @@ export default function AlertsPage() {
             <button
               className="btn btn-secondary"
               onClick={() => addAlert(4)}
-              style={{ color: '#38bdf8', borderColor: 'rgba(6, 182, 212, 0.3)' }}
+              style={{ color: '#5eead4', borderColor: 'rgba(6, 182, 212, 0.3)' }}
             >
               + Test Info (P4)
             </button>
@@ -160,7 +156,6 @@ export default function AlertsPage() {
         <div className="card-header">
           <div>
             <div className="card-title">Active Alert Queue Feed</div>
-            <div className="card-subtitle">Alerts are queued by priority and processed in order</div>
           </div>
           <span className="badge badge-blue">{displayQueue.length} pending</span>
         </div>
@@ -218,55 +213,6 @@ export default function AlertsPage() {
             })}
           </div>
         )}
-      </div>
-
-      {/* Clean System Protection Rules (Replaces Cluttered Matrix) */}
-      <div className="card">
-        <div className="card-header">
-          <div>
-            <div className="card-title">Automated System Protection Rules</div>
-            <div className="card-subtitle">Active firmware failsafes protecting physical hardware</div>
-          </div>
-          <span className="badge badge-green">Protections Active</span>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 14 }}>
-          <div style={{ padding: 14, borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <div style={{ width: 26, height: 26, borderRadius: 6, background: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-amber)' }}>
-                <Droplets size={14} />
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Turbidity Protection</span>
-            </div>
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-              If water turbidity drops below 2.50V (muddy water), the 12V peristaltic pump relay is instantly disabled to prevent optical chamber fouling.
-            </p>
-          </div>
-
-          <div style={{ padding: 14, borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <div style={{ width: 26, height: 26, borderRadius: 6, background: 'rgba(244, 63, 94, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-rose)' }}>
-                <Zap size={14} />
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Laser Optical Guard</span>
-            </div>
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-              Monitors the 650nm beam alignment. Steep voltage drops below 2.50V identify microplastic particles and trigger immediate event logging.
-            </p>
-          </div>
-
-          <div style={{ padding: 14, borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <div style={{ width: 26, height: 26, borderRadius: 6, background: 'rgba(6, 182, 212, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-cyan)' }}>
-                <Thermometer size={14} />
-              </div>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>Thermal Cutoff</span>
-            </div>
-            <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-              Continuous temperature compensation dynamically corrects the photodiode baseline to prevent false positives caused by fluid warming.
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );

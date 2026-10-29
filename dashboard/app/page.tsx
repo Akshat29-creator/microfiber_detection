@@ -69,9 +69,6 @@ export default function DashboardPage() {
           <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             Microplastic Detection System
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-            Optical sensor telemetry, actuator control, and embedded DSA performance monitor
-          </p>
         </div>
 
         <div style={{ display: 'flex', gap: 8 }}>
@@ -133,7 +130,7 @@ export default function DashboardPage() {
             <Zap size={16} />
           </div>
           <div className="flow-step-content">
-            <div className="flow-step-name">4. 650nm Laser Cell</div>
+            <div className="flow-step-name">4. 650nm Laser</div>
             <div className="flow-step-status" style={{ color: isLaserOn ? 'var(--accent-rose)' : 'var(--text-muted)' }}>
               {isLaserOn ? 'Beam Active' : 'Standby'}
             </div>
@@ -177,7 +174,7 @@ export default function DashboardPage() {
         {/* Turbidity */}
         <div className="metric-card">
           <div className="metric-top">
-            <span className="metric-label">Turbidity Clarity</span>
+            <span className="metric-label">Turbidity</span>
             <Droplets size={15} style={{ color: 'var(--accent-emerald)' }} />
           </div>
           <div className="metric-val">
@@ -232,7 +229,6 @@ export default function DashboardPage() {
           <div className="card-header">
             <div>
               <div className="card-title">Photodiode Voltage Waveform</div>
-              <div className="card-subtitle">Continuous optical transmission. Drops below 2.50V indicate microplastic presence.</div>
             </div>
             <span className={`badge ${mode === 'real' ? (connected ? 'badge-green' : 'badge-red') : 'badge-blue'}`}>
               {mode === 'real' ? (connected ? 'Live ADC' : 'Hardware Offline') : 'Simulated'}
@@ -245,11 +241,11 @@ export default function DashboardPage() {
                 <AreaChart data={displayVoltageHistory}>
                   <defs>
                     <linearGradient id="voltageGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="#06b6d4" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#2dd4bf" stopOpacity={0.4} />
+                      <stop offset="100%" stopColor="#2dd4bf" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
+                  <CartesianGrid stroke="rgba(45, 212, 191, 0.08)" strokeDasharray="3 3" />
                   <XAxis dataKey="ts" tick={false} axisLine={false} />
                   <YAxis
                     domain={[1.8, 3.6]}
@@ -266,15 +262,15 @@ export default function DashboardPage() {
                         return (
                           <div
                             style={{
-                              background: '#0f172a',
-                              border: '1px solid rgba(255, 255, 255, 0.15)',
+                              background: '#071c23',
+                              border: '1px solid rgba(45, 212, 191, 0.3)',
                               borderRadius: 'var(--radius)',
                               padding: '8px 12px',
                               fontSize: 12,
                             }}
                           >
                             <div style={{ color: 'var(--text-muted)' }}>t = {d.ts}s</div>
-                            <div style={{ fontWeight: 700, color: isDrop ? '#f43f5e' : '#22d3ee' }}>
+                            <div style={{ fontWeight: 700, color: isDrop ? '#f43f5e' : '#2dd4bf' }}>
                               {d.v.toFixed(3)} V {isDrop && '(Drop Detected)'}
                             </div>
                           </div>
@@ -298,8 +294,8 @@ export default function DashboardPage() {
                   <Area
                     type="monotone"
                     dataKey="v"
-                    stroke="#06b6d4"
-                    strokeWidth={2}
+                    stroke="#2dd4bf"
+                    strokeWidth={2.5}
                     fill="url(#voltageGradient)"
                     isAnimationActive={false}
                   />
@@ -315,35 +311,6 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
-          
-          {/* Chamber Optical Metrics Strip */}
-          {/* Chamber Optical Metrics Strip */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginTop: 14, paddingTop: 14, borderTop: '1px solid var(--border-color)' }}>
-            <div style={{ padding: '8px 10px', borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>TRANSMISSIVITY</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent-cyan)', fontFamily: "'JetBrains Mono', monospace" }}>
-                {mode === 'real' && !connected ? '--' : `${Math.min(100, Math.max(0, (sensors.photodiode / 3.05 * 100))).toFixed(1)}%`}
-              </div>
-            </div>
-            <div style={{ padding: '8px 10px', borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>OPTICAL SNR</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent-emerald)', fontFamily: "'JetBrains Mono', monospace" }}>
-                {mode === 'real' && !connected ? '--' : sensors.photodiode > 0 ? `${(20 * Math.log10(sensors.photodiode / 0.025)).toFixed(1)} dB` : '43.2 dB'}
-              </div>
-            </div>
-            <div style={{ padding: '8px 10px', borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>ATTENUATION LIMIT</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent-rose)', fontFamily: "'JetBrains Mono', monospace" }}>
-                &lt; 2.500 V
-              </div>
-            </div>
-            <div style={{ padding: '8px 10px', borderRadius: 'var(--radius)', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)' }}>
-              <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>SAMPLING CADENCE</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent-purple)', fontFamily: "'JetBrains Mono', monospace" }}>
-                {mode === 'real' && !connected ? '--' : '100 Hz'}
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Right: Actuators & Alerts */}
@@ -351,7 +318,6 @@ export default function DashboardPage() {
           <div className="card-header">
             <div>
               <div className="card-title">Hardware Actuators</div>
-              <div className="card-subtitle">GPIO relay status & alert dispatch</div>
             </div>
           </div>
 

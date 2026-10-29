@@ -1,27 +1,31 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Modern Dark Palette (Linear / Vercel style) */
-  --bg-primary: #0b0f19;
-  --bg-secondary: #0f172a;
-  --bg-card: #131b2e;
-  --bg-card-hover: #17223b;
-  --bg-input: #090d16;
+  /* High-Tech Dark Turquoise Palette */
+  --bg-primary: #041217;
+  --bg-secondary: #071c23;
+  --bg-card: #0a252f;
+  --bg-card-hover: #0e313e;
+  --bg-input: #04141a;
   
-  /* Crisp Borders */
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(255, 255, 255, 0.16);
-  --border-active: rgba(6, 182, 212, 0.4);
+  /* Crisp Turquoise Borders */
+  --border-color: rgba(45, 212, 191, 0.16);
+  --border-hover: rgba(45, 212, 191, 0.36);
+  --border-active: rgba(45, 212, 191, 0.65);
 
   /* Clean Typography */
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
+  --text-primary: #f0fdfa;
+  --text-secondary: #ccfbf1;
   --text-muted: #64748b;
   --text-dim: #475569;
 
-  /* Functional Accents */
-  --accent-cyan: #06b6d4;
-  --accent-blue: #3b82f6;
+  /* Functional Accents - Vivid Turquoise Theme */
+  --accent-cyan: #2dd4bf;
+  --accent-turquoise: #2dd4bf;
+  --accent-turquoise-glow: #14b8a6;
+  --accent-turquoise-light: #5eead4;
+  --accent-turquoise-bright: #00f5d4;
+  --accent-blue: #0ea5e9;
   --accent-emerald: #10b981;
   --accent-amber: #f59e0b;
   --accent-rose: #f43f5e;
@@ -121,14 +125,15 @@ html, body {
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(59, 130, 246, 0.2));
-  border: 1px solid rgba(6, 182, 212, 0.3);
+  background: linear-gradient(135deg, rgba(45, 212, 191, 0.25), rgba(14, 165, 233, 0.25));
+  border: 1px solid rgba(45, 212, 191, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent-cyan);
+  color: var(--accent-turquoise-bright);
   font-weight: 800;
   font-size: 14px;
+  box-shadow: 0 0 14px rgba(45, 212, 191, 0.3);
 }
 
 .sidebar-logo-text h2 {
@@ -180,9 +185,10 @@ html, body {
 }
 
 .nav-link.active {
-  background: rgba(6, 182, 212, 0.1);
-  color: var(--accent-cyan);
+  background: rgba(45, 212, 191, 0.12);
+  color: var(--accent-turquoise-bright);
   font-weight: 600;
+  border-left: 3px solid var(--accent-turquoise);
 }
 
 .nav-link-badge {
@@ -197,8 +203,8 @@ html, body {
 }
 
 .nav-link.active .nav-link-badge {
-  background: rgba(6, 182, 212, 0.2);
-  color: var(--accent-cyan);
+  background: rgba(45, 212, 191, 0.25);
+  color: var(--accent-turquoise-light);
 }
 
 .sidebar-footer {
@@ -438,12 +444,16 @@ html, body {
 }
 
 .btn-primary {
-  background: var(--accent-cyan);
-  color: #04101e;
+  background: linear-gradient(135deg, #0d9488, #2dd4bf);
+  color: #022026;
+  font-weight: 700;
+  box-shadow: 0 0 16px rgba(45, 212, 191, 0.35);
 }
 
 .btn-primary:hover {
-  background: #22d3ee;
+  background: linear-gradient(135deg, #14b8a6, #5eead4);
+  box-shadow: 0 0 22px rgba(45, 212, 191, 0.55);
+  color: #011519;
 }
 
 .btn-secondary {
@@ -496,8 +506,8 @@ html, body {
 }
 
 .badge-green { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-.badge-cyan { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
-.badge-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+.badge-cyan { background: rgba(45, 212, 191, 0.18); color: #2dd4bf; border: 1px solid rgba(45, 212, 191, 0.35); }
+.badge-blue { background: rgba(14, 165, 233, 0.18); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.35); }
 .badge-red { background: rgba(244, 63, 94, 0.15); color: #fb7185; }
 .badge-yellow { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
 
@@ -737,6 +747,22 @@ html, body {
   text-align: center;
   padding: 32px 16px;
   color: var(--text-muted);
+}
+
+/* Custom Turquoise Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(45, 212, 191, 0.25);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(45, 212, 191, 0.5);
 }
 
 /* Hide Next.js Dev Overlay Indicator */

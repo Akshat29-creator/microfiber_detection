@@ -1,6 +1,9 @@
 'use client';
 import { useWS } from '@/context/WebSocketContext';
-import { Plus, Trash2, List, Activity, Droplets, CheckCircle2, AlertTriangle, RefreshCw } from 'lucide-react';
+import {
+  Plus, Trash2, List, Activity, CheckCircle2,
+  AlertTriangle, RefreshCw, Download, Database, HardDriveDownload
+} from 'lucide-react';
 import { useState } from 'react';
 
 export default function SensorLogPage() {
@@ -9,8 +12,8 @@ export default function SensorLogPage() {
     sendCommand,
     mode,
     connected,
+    clearSensorLog,
     demoSensorLogAppend,
-    demoSensorLogInsertHead,
     demoSensorLogDeleteFirst,
     demoSensorLogDeleteLast,
   } = useWS();
@@ -21,6 +24,8 @@ export default function SensorLogPage() {
   const displayNodes = sensorLog.map((s, idx) => ({
     id: idx + 1,
     ts: s.timestamp,
+    clockTime: s.wallClockTime || new Date().toLocaleTimeString('en-US', { hour12: false }),
+    recordedAt: s.recordedAt || '',
     v: s.voltage,
     type: s.sensorType,
     valid: s.valid,
@@ -79,6 +84,32 @@ export default function SensorLogPage() {
     });
   };
 
+  const exportToCSV = () => {
+    if (displayNodes.length === 0) return;
+    const headers = 'Sample Number,Elapsed Time (s),Clock Time,Sensor Type,Voltage (V),Condition,Filter Status\n';
+    const rows = displayNodes.map(n => {
+      const condition = n.v < 2.50 ? 'Microplastic Contaminant' : 'Clean Water';
+      const status = n.valid ? 'Valid / Active' : 'Turbidity Rejected';
+      return `${n.id},${n.ts.toFixed(2)},"${n.clockTime}","${n.type}",${n.v.toFixed(3)},"${condition}","${status}"`;
+    }).join('\n');
+
+    const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Microplastic_Sensor_Readings_${new Date().toISOString().replace(/[:.]/g, '-')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const syncHardwareLog = () => {
+    if (mode === 'real' && connected) {
+      sendCommand({ cmd: 'sensorLog', action: 'dump' });
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* Page Header */}
@@ -87,13 +118,15 @@ export default function SensorLogPage() {
           <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
             Sensor Log
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-            Continuous timeline of optical photodiode and water turbidity sensor readings
-          </p>
         </div>
-        <span className={`badge ${mode === 'real' ? (connected ? 'badge-green' : 'badge-red') : 'badge-cyan'}`}>
-          {mode === 'real' ? (connected ? 'Hardware Connected' : 'Hardware Offline') : 'Demo Mode Active'}
-        </span>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span className={`badge ${mode === 'real' ? (connected ? 'badge-green' : 'badge-red') : 'badge-cyan'}`}>
+            {mode === 'real' ? (connected ? 'Hardware Connected' : 'Hardware Offline') : 'Demo Mode Active'}
+          </span>
+          <span className="badge badge-cyan" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Database size={12} /> Auto-Saved with Time
+          </span>
+        </div>
       </div>
 
       {/* 4 Clean Metric Cards */}
@@ -139,8 +172,34 @@ export default function SensorLogPage() {
       <div className="card">
         <div className="card-header">
           <div>
-            <div className="card-title">Log Controls</div>
-            <div className="card-subtitle">Add new sensor readings or manage logged data</div>
+            <div className="card-title">Log Controls & Hardware Data Actions</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              className="btn btn-primary"
+              onClick={exportToCSV}
+              disabled={displayNodes.length === 0}
+              title="Download all logged sensor readings with timestamp to a CSV file"
+            >
+              <Download size={14} /> Save Log with Time (CSV)
+            </button>
+            {mode === 'real' && connected && (
+              <button
+                className="btn btn-secondary"
+                onClick={syncHardwareLog}
+                title="Fetch all log readings stored in ESP32 memory"
+              >
+                <HardDriveDownload size={14} /> Sync ESP32 Log
+              </button>
+            )}
+            <button
+              className="btn btn-secondary"
+              onClick={clearSensorLog}
+              disabled={displayNodes.length === 0}
+              title="Clear all stored sensor readings"
+            >
+              <Trash2 size={14} /> Clear Log
+            </button>
           </div>
         </div>
 
@@ -183,14 +242,13 @@ export default function SensorLogPage() {
         <div className="card-header">
           <div>
             <div className="card-title">Recent Readings Flow</div>
-            <div className="card-subtitle">Visual timeline of recorded voltage levels</div>
           </div>
-          <span className="badge badge-blue">{displayNodes.length} items</span>
+          <span className="badge badge-cyan">{displayNodes.length} items</span>
         </div>
 
         {displayNodes.length === 0 ? (
           <div className="empty-state" style={{ padding: '36px 16px' }}>
-            No readings recorded yet. Click <strong>Load Sample Readings</strong> or <strong>Add Reading</strong> to start.
+            No readings recorded yet. {mode === 'real' ? 'Connect ESP32 hardware to stream live readings' : 'Click Load Sample Readings or Add Reading to start'}.
           </div>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, overflowX: 'auto', padding: '8px 2px' }}>
@@ -202,14 +260,15 @@ export default function SensorLogPage() {
                   style={{
                     padding: '10px 14px',
                     borderRadius: 'var(--radius)',
-                    background: isDrop ? 'rgba(244, 63, 94, 0.12)' : 'rgba(255, 255, 255, 0.03)',
+                    background: isDrop ? 'rgba(244, 63, 94, 0.12)' : 'rgba(45, 212, 191, 0.08)',
                     border: `1px solid ${isDrop ? 'rgba(244, 63, 94, 0.45)' : 'var(--border-color)'}`,
                     textAlign: 'center',
-                    minWidth: 105,
+                    minWidth: 115,
                     flexShrink: 0,
                   }}
                 >
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{node.ts.toFixed(1)}s</div>
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)' }}>{node.clockTime}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>t = {node.ts.toFixed(1)}s</div>
                   <div style={{ fontSize: 16, fontWeight: 700, fontFamily: "'JetBrains Mono', monospace", color: isDrop ? 'var(--accent-rose)' : 'var(--accent-cyan)', margin: '3px 0' }}>
                     {node.v.toFixed(2)}V
                   </div>
@@ -229,15 +288,18 @@ export default function SensorLogPage() {
           <div className="card-header">
             <div>
               <div className="card-title">Reading Records</div>
-              <div className="card-subtitle">Detailed table of recorded voltage levels</div>
             </div>
+            <button className="btn btn-secondary" onClick={exportToCSV} style={{ fontSize: 12, padding: '4px 10px' }}>
+              <Download size={13} /> Export CSV
+            </button>
           </div>
 
           <table className="data-table">
             <thead>
               <tr>
                 <th>Sample #</th>
-                <th>Time (s)</th>
+                <th>Clock Time</th>
+                <th>Elapsed (s)</th>
                 <th>Sensor Type</th>
                 <th>Measured Voltage</th>
                 <th>Condition</th>
@@ -250,6 +312,9 @@ export default function SensorLogPage() {
                 return (
                   <tr key={i}>
                     <td style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 600 }}>#{i + 1}</td>
+                    <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: 'var(--accent-cyan)' }}>
+                      {n.clockTime}
+                    </td>
                     <td>{n.ts.toFixed(2)} s</td>
                     <td>{n.type}</td>
                     <td style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, color: isDrop ? 'var(--accent-rose)' : 'var(--accent-cyan)' }}>
@@ -261,7 +326,7 @@ export default function SensorLogPage() {
                       </span>
                     </td>
                     <td>
-                      <span className="badge badge-blue">
+                      <span className="badge badge-cyan">
                         {n.valid ? 'Active' : 'Filtered'}
                       </span>
                     </td>

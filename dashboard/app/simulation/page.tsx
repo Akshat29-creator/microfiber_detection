@@ -61,9 +61,6 @@ export default function SimulationPage() {
         <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
           Detection Pipeline Simulation
         </h1>
-        <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 4 }}>
-          Simulates the physical fluid flow cycle: Pump Relay On → Turbidity Failsafe → 650nm Laser Occlusion → In-Memory DSA Indexing
-        </p>
       </div>
 
       {/* Phase Stepper */}
@@ -122,7 +119,6 @@ export default function SimulationPage() {
           <div className="card-header">
             <div>
               <div className="card-title">Simulation Parameters</div>
-              <div className="card-subtitle">Set sample volume and trigger the detection loop</div>
             </div>
           </div>
 
@@ -245,7 +241,6 @@ export default function SimulationPage() {
           <div className="card-header">
             <div>
               <div className="card-title">Live Sensor Output</div>
-              <div className="card-subtitle">Real-time readings and detection alerts</div>
             </div>
             <span className="badge badge-blue">{simResults.length} readings</span>
           </div>
